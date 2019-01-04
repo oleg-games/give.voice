@@ -1,4 +1,4 @@
-package com.oleg.givevoice.user;
+package com.oleg.givevoice.db.gvanswers;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,13 +8,12 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 
-import com.oleg.givevoice.MainActivity;
-import com.oleg.givevoice.R;
+import com.example.givevoice.R;
 
 /**
- * Adapter to bind a GVUser List to a view
+ * Adapter to bind a GVQuestion List to a view
  */
-public class GVUserAdapter extends ArrayAdapter<GVUser> {
+public class GVQuestionAdapter extends ArrayAdapter<GVQuestion> {
 
     /**
      * Adapter context
@@ -26,7 +25,7 @@ public class GVUserAdapter extends ArrayAdapter<GVUser> {
      */
     int mLayoutResourceId;
 
-    public GVUserAdapter(Context context, int layoutResourceId) {
+    public GVQuestionAdapter(Context context, int layoutResourceId) {
         super(context, layoutResourceId);
 
         mContext = context;
@@ -40,7 +39,7 @@ public class GVUserAdapter extends ArrayAdapter<GVUser> {
     public View getView(int position, View convertView, ViewGroup parent) {
         View row = convertView;
 
-        final GVUser currentItem = getItem(position);
+        final GVQuestion currentItem = getItem(position);
 
         if (row == null) {
             LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
@@ -48,8 +47,8 @@ public class GVUserAdapter extends ArrayAdapter<GVUser> {
         }
 
         row.setTag(currentItem);
-        final CheckBox checkBox = (CheckBox) row.findViewById(R.id.checkGVUser);
-        checkBox.setText(currentItem.getText());
+        final CheckBox checkBox = (CheckBox) row.findViewById(R.id.checkToDoItem);
+        checkBox.setText(currentItem.getQuestionText());
         checkBox.setChecked(false);
         checkBox.setEnabled(true);
 
@@ -57,13 +56,13 @@ public class GVUserAdapter extends ArrayAdapter<GVUser> {
 
             @Override
             public void onClick(View arg0) {
-                if (checkBox.isChecked()) {
-                    checkBox.setEnabled(false);
-                    if (mContext instanceof MainActivity) {
-                        MainActivity activity = (MainActivity) mContext;
-                        activity.checkItem(currentItem);
-                    }
-                }
+//                if (checkBox.isChecked()) {
+//                    checkBox.setEnabled(false);
+//                    if (mContext instanceof ToDoActivity) {
+//                        ToDoActivity activity = (ToDoActivity) mContext;
+//                        activity.checkItem(currentItem);
+//                    }
+//                }
             }
         });
 
