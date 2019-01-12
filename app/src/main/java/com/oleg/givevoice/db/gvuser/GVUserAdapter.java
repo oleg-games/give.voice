@@ -1,12 +1,9 @@
-package com.oleg.givevoice.user;
+package com.oleg.givevoice.db.gvuser;
 
-import android.app.Activity;
 import android.content.Context;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
 
 //import com.oleg.givevoice.main.R;
 //import com.oleg.givevoice.main.MainActivity;

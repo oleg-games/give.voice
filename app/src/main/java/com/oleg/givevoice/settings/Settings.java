@@ -1,4 +1,4 @@
-package com.oleg.givevoice.questions;
+package com.oleg.givevoice.settings;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -14,14 +14,14 @@ import com.oleg.givevoice.R;
  */
 
 
-public class Questions extends Fragment {
+public class Settings extends Fragment {
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         //returning our layout file
         //change R.layout.yourlayoutfilename for each of your fragments
-        return inflater.inflate(R.layout.fragment_answers_layout, container, false);
+        return inflater.inflate(R.layout.fragment_settings_layout, container, false);
     }
 
 
@@ -29,6 +29,6 @@ public class Questions extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         //you can set the title for your toolbar here for different fragments different titles
-        getActivity().setTitle("Questions");
+        getActivity().setTitle("Settings");
     }
 }

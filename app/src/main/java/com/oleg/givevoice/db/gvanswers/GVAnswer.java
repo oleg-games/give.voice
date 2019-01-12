@@ -1,14 +1,14 @@
-package com.oleg.givevoice.db.gvquestions;
+package com.oleg.givevoice.db.gvanswers;
 
 /**
  * Represents an item in a ToDo list
  */
-public class GVQuestion {
+public class GVAnswer {
 
     /**
      * Item text
      */
-    @com.google.gson.annotations.SerializedName("QuestionText")
+    @com.google.gson.annotations.SerializedName("AnswerText")
     private String mQuestionText;
 
     /**
@@ -26,7 +26,7 @@ public class GVQuestion {
     /**
      * GVQuestion constructor
      */
-    public GVQuestion() {
+    public GVAnswer() {
 
     }
 
@@ -43,7 +43,7 @@ public class GVQuestion {
      * @param id
      *            The item id
      */
-    public GVQuestion(String text, String id) {
+    public GVAnswer(String text, String id) {
         this.setQuestionText(text);
         this.setId(id);
     }
@@ -98,6 +98,6 @@ public class GVQuestion {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof GVQuestion && ((GVQuestion) o).mId == mId;
+        return o instanceof GVAnswer && ((GVAnswer) o).mId == mId;
     }
 }

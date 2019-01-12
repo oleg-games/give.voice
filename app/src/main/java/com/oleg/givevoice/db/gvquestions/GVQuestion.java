@@ -1,4 +1,4 @@
-package com.example.givevoice.GVQuestion;
+package com.oleg.givevoice.db.gvquestions;
 
 /**
  * Represents an item in a ToDo list
@@ -17,11 +17,17 @@ public class GVQuestion {
     @com.google.gson.annotations.SerializedName("id")
     private String mId;
 
-//    /**
-//     * Indicates if the item is completed
-//     */
-//    @com.google.gson.annotations.SerializedName("complete")
-//    private boolean mComplete;
+    /**
+     * Item photo
+     */
+    @com.google.gson.annotations.SerializedName("Photo")
+    private String mPhoto;
+
+    /**
+     * Indicates if the item deleted
+     */
+    @com.google.gson.annotations.SerializedName("deleted")
+    private boolean mDeleted;
 
     /**
      * GVQuestion constructor
@@ -82,20 +88,21 @@ public class GVQuestion {
         mId = id;
     }
 
-//    /**
-//     * Indicates if the item is marked as completed
-//     */
-//    public boolean isComplete() {
-//        return mComplete;
-//    }
+    /**
+     * Indicates if the item is marked as completed
+     */
+    public boolean isDeleted() {
+        return mDeleted;
+    }
 
-//    /**
-//     * Marks the item as completed or incompleted
-//     */
-//    public void setComplete(boolean complete) {
-//        mComplete = complete;
-//    }
+    /**
+     * Marks the item as completed or incompleted
+     */
+    public void setDeleted(boolean deleted) {
+        mDeleted = deleted;
+    }
 
+//    /!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     @Override
     public boolean equals(Object o) {
         return o instanceof GVQuestion && ((GVQuestion) o).mId == mId;

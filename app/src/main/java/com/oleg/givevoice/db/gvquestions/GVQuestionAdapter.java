@@ -1,4 +1,4 @@
-package com.example.givevoice.GVQuestion;
+package com.oleg.givevoice.db.gvquestions;
 
 import android.app.Activity;
 import android.content.Context;
@@ -6,10 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-
-import com.example.givevoice.GVQuestion.GVQuestion;
-import com.example.givevoice.R;
 
 /**
  * Adapter to bind a GVQuestion List to a view
@@ -48,24 +44,24 @@ public class GVQuestionAdapter extends ArrayAdapter<GVQuestion> {
         }
 
         row.setTag(currentItem);
-        final CheckBox checkBox = (CheckBox) row.findViewById(R.id.checkToDoItem);
-        checkBox.setText(currentItem.getQuestionText());
-        checkBox.setChecked(false);
-        checkBox.setEnabled(true);
-
-        checkBox.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-//                if (checkBox.isChecked()) {
-//                    checkBox.setEnabled(false);
-//                    if (mContext instanceof ToDoActivity) {
-//                        ToDoActivity activity = (ToDoActivity) mContext;
-//                        activity.checkItem(currentItem);
-//                    }
-//                }
-            }
-        });
+//        final CheckBox checkBox = (CheckBox) row.findViewById(R.id.checkToDoItem);
+//        checkBox.setText(currentItem.getQuestionText());
+//        checkBox.setChecked(false);
+//        checkBox.setEnabled(true);
+//
+//        checkBox.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View arg0) {
+////                if (checkBox.isChecked()) {
+////                    checkBox.setEnabled(false);
+////                    if (mContext instanceof ToDoActivity) {
+////                        ToDoActivity activity = (ToDoActivity) mContext;
+////                        activity.checkItem(currentItem);
+////                    }
+////                }
+//            }
+//        });
 
         return row;
     }

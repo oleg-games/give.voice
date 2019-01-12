@@ -1,4 +1,4 @@
-package com.oleg.givevoice.user;
+package com.oleg.givevoice.db.gvuser;
 
 /**
  * Represents an item in a ToDo list
