@@ -1,6 +1,8 @@
 package com.oleg.givevoice.main;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -18,6 +20,7 @@ import android.view.View;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.answers.Answers;
 import com.oleg.givevoice.db.GVAzureServiceAdapter;
+import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.questions.Questions;
 import com.oleg.givevoice.settings.Settings;
 
@@ -31,8 +34,22 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+//        SharedPreferences settings = PreferenceManager
+//                .getDefaultSharedPreferences(this);
+//        SharedPreferences.Editor editor = settings.edit();
+//        editor.putString("phone", "89507355808");
+//        editor.commit();
+//
+//        SharedPreferences settings = PreferenceManager
+//                .getDefaultSharedPreferences(this);
+//        SharedPreferences.Editor editor = settings.edit();
+//
+//        if(settings.contains("phone")) {
+//            String text = settings.getString("phone", "");
+//        }
+
         try {
-            GVAzureServiceAdapter.Initialize(this);
+            GVPrivateAzureServiceAdapter.Initialize(this);
         } catch (IllegalStateException e) {
 
         }

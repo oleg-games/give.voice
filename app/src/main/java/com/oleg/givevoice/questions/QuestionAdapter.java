@@ -48,7 +48,7 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
     public void onBindViewHolder(QuestionAdapter.ViewHolder holder, int position) {
         GVQuestion question = questions.get(position);
 //        holder.imageView.setImageResource(questions.getImage());
-        holder.questionTextView.setText(question.getQuestionText());
+        holder.questionTextView.setText(question.getText());
 //        holder.companyView.setText(questions.getCompany());
     }
 

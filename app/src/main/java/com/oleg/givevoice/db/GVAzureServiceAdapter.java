@@ -2,8 +2,13 @@ package com.oleg.givevoice.db;
 
 import android.content.Context;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
+import com.microsoft.windowsazure.mobileservices.http.NextServiceFilterCallback;
 import com.microsoft.windowsazure.mobileservices.http.OkHttpClientFactory;
+import com.microsoft.windowsazure.mobileservices.http.ServiceFilter;
+import com.microsoft.windowsazure.mobileservices.http.ServiceFilterRequest;
+import com.microsoft.windowsazure.mobileservices.http.ServiceFilterResponse;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.net.MalformedURLException;
@@ -15,7 +20,7 @@ public class GVAzureServiceAdapter {
     private MobileServiceClient mClient;
     private static GVAzureServiceAdapter mInstance = null;
 
-    private GVAzureServiceAdapter(Context context) {
+    protected GVAzureServiceAdapter(Context context) {
         mContext = context;
         try {
             mClient = new MobileServiceClient(mMobileBackendUrl, mContext);
@@ -31,21 +36,6 @@ public class GVAzureServiceAdapter {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-    }
-
-    public static void Initialize(Context context) {
-        if (mInstance == null) {
-            mInstance = new GVAzureServiceAdapter(context);
-        } else {
-            throw new IllegalStateException("AzureServiceAdapter is already initialized");
-        }
-    }
-
-    public static GVAzureServiceAdapter getInstance() {
-        if (mInstance == null) {
-            throw new IllegalStateException("AzureServiceAdapter is not initialized");
-        }
-        return mInstance;
     }
 
     public MobileServiceClient getClient() {

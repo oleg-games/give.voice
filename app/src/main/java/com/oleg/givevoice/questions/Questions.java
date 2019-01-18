@@ -17,9 +17,8 @@ import android.view.ViewGroup;
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
-import com.oleg.givevoice.db.GVAzureServiceAdapter;
+import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
-import com.oleg.givevoice.main.AddNewQuestionActivity;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -45,6 +44,8 @@ public class Questions extends Fragment {
 //     */
 //    private GVQuestionAdapter mAdapter;
 
+    MobileServiceClient mClient;
+
     private QuestionAdapter mAdapter;
 
     public Questions() {
@@ -66,7 +67,7 @@ public class Questions extends Fragment {
         //you can set the title for your toolbar here for different fragments different titles
         getActivity().setTitle("Questions");
 
-        GVAzureServiceAdapter servicemAdapter = GVAzureServiceAdapter.getInstance();
+        GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionTable = mClient.getTable(GVQuestion.class);
 
@@ -153,7 +154,7 @@ public class Questions extends Fragment {
      */
 
     private List<GVQuestion> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
-        return mQuestionTable.where().field("UserId").eq("89507355809").execute().get();
+        return mQuestionTable.where().field("UserId").eq("89507355808").execute().get();
     }
 
     //Offline Sync
@@ -230,5 +231,4 @@ public class Questions extends Fragment {
         builder.setTitle(title);
         builder.create().show();
     }
-
 }
