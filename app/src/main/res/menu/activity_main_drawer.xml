@@ -9,6 +9,10 @@
             android:icon="@drawable/ic_menu_camera"
             android:title="Questions" />
         <item
+            android:id="@+id/questions_answers"
+            android:icon="@drawable/ic_menu_slideshow"
+            android:title="Questions Answers" />
+        <item
             android:id="@+id/answers"
             android:icon="@drawable/ic_menu_gallery"
             android:title="Answers" />

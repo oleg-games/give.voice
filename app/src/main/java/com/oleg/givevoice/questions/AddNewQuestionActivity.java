@@ -1,25 +1,40 @@
 package com.oleg.givevoice.questions;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
+import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.main.MainActivity;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class AddNewQuestionActivity extends AppCompatActivity {
+
+    String questionId;
+    String fromPhone;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,26 +44,33 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionTable = mClient.getTable(GVQuestion.class);
-
+        mAnswerTable = mClient.getTable(GVAnswer.class);
+        final Activity activity = this;
+        mActivity = this;
 //        Button button = (Button) findViewById(R.id.button);
         Button button = (Button) findViewById(R.id.add_question_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void onClick(final View v) {
                 final EditText edit = (EditText) findViewById(R.id.question_text);
                 final GVQuestion item = new GVQuestion();
 
                 item.setText(edit.getText().toString());
-                BigInteger a = new BigInteger("89507355808");
-                item.setUserId(a);
-//                item.setId("3");
-//                item.set(true);
+                fromPhone = "89507355808";
+
+                BigInteger fromPhoneInteger = new BigInteger(fromPhone);
+                item.setUserId(fromPhoneInteger);
+
                 // Insert the new item
                 AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
                     @Override
                     protected Void doInBackground(Void... params) {
                     try {
-                        addItemInTable(item);
+                        GVQuestion question = addItemInTable(item);
+                        questionId = question.getId();
+                        setPhoneContacts();
+                        Intent intent = new Intent(activity, MainActivity.class);
+                        startActivity(intent);
                     } catch (final Exception e) {
                         createAndShowDialogFromTask(e, "Error");
                     }
@@ -60,6 +82,110 @@ public class AddNewQuestionActivity extends AppCompatActivity {
             }
         });
     }
+
+//    public void setPhoneContactsIntoArrayList(){
+//
+//        Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);
+//        while (cursor.moveToNext()) {
+////            name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+//            String phonenumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+////            storeContacts.add(name + " "  + ":" + " " + phonenumber);
+//            System.out.println(phonenumber);
+//        }
+//
+//        cursor.close();
+//
+//    }
+
+    private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission is granted
+                try {
+                    setPhoneContacts();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    //Описываем метод:
+    public List<String> setPhoneContacts() throws ExecutionException, InterruptedException {
+        List<String> phones = new ArrayList<>();
+
+        // Check the SDK version and whether the permission is already granted or not.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        } else {
+            // Android version is lesser than 6.0 or the permission is already granted.
+//            List<String> contacts = getContactNames();
+//            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, contacts);
+//            lstNames.setAdapter(adapter);
+
+
+            String phoneNumber = null;
+
+            //Связываемся с контактными данными и берем с них значения id контакта, имени контакта и его номера:
+            Uri CONTENT_URI = ContactsContract.Contacts.CONTENT_URI;
+            String _ID = ContactsContract.Contacts._ID;
+            String DISPLAY_NAME = ContactsContract.Contacts.DISPLAY_NAME;
+            String HAS_PHONE_NUMBER = ContactsContract.Contacts.HAS_PHONE_NUMBER;
+
+            Uri PhoneCONTENT_URI = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+            String Phone_CONTACT_ID = ContactsContract.CommonDataKinds.Phone.CONTACT_ID;
+            String NUMBER = ContactsContract.CommonDataKinds.Phone.NUMBER;
+
+
+            StringBuffer output = new StringBuffer();
+            ContentResolver contentResolver = getContentResolver();
+            Cursor cursor = contentResolver.query(CONTENT_URI, null, null, null, null);
+            //Запускаем цикл обработчик для каждого контакта:
+            if (cursor.getCount() > 0) {
+
+                //Если значение имени и номера контакта больше 0 (то есть они существуют) выбираем
+                //их значения в приложение привязываем с соответствующие поля "Имя" и "Номер":
+                while (cursor.moveToNext()) {
+                    String contact_id = cursor.getString(cursor.getColumnIndex(_ID));
+                    String name = cursor.getString(cursor.getColumnIndex(DISPLAY_NAME));
+                    int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex(HAS_PHONE_NUMBER)));
+
+                    //Получаем имя:
+                    if (hasPhoneNumber > 0) {
+//                        output.append("\n Имя: " + name);
+                        Cursor phoneCursor = contentResolver.query(PhoneCONTENT_URI, null,
+                                Phone_CONTACT_ID + " = ?", new String[]{contact_id}, null);
+
+                        //и соответствующий ему номер:
+                        while (phoneCursor.moveToNext()) {
+                            phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
+                            phones.add(phoneNumber);
+                            GVAnswer item = new GVAnswer();
+                            item.setQuestionId(questionId);
+                            item.setToPhone(fromPhone);
+                            addItemInTableAnswer(item);
+//                            output.append("\n Телефон: " + phoneNumber);
+                        }
+                    }
+                    output.append("\n");
+                }
+                System.out.println("test");
+                //Полученные данные отображаем с созданном элементе TextView:
+//            contacts.setText(output);
+            }
+        }
+        return phones;
+    }
+
 
 //    public void onAddQuestionClick(View view)
 //    {
@@ -77,6 +203,10 @@ public class AddNewQuestionActivity extends AppCompatActivity {
      */
     private MobileServiceTable<GVQuestion> mQuestionTable;
 
+    /**
+     * Mobile Service Table used to access data
+     */
+    private MobileServiceTable<GVAnswer> mAnswerTable;
 //    /**
 //     * mAdapter to sync the items list with the view
 //     */
@@ -322,4 +452,16 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         GVQuestion entity = mQuestionTable.insert(item).get();
         return entity;
     }
+
+    /**
+     * Add an item to the Mobile Service Table
+     *
+     * @param item
+     *            The item to Add
+     */
+    public GVAnswer addItemInTableAnswer(GVAnswer item) throws ExecutionException, InterruptedException {
+        GVAnswer entity = mAnswerTable.insert(item).get();
+        return entity;
+    }
+
 }

@@ -30,22 +30,12 @@ import java.util.concurrent.ExecutionException;
 
 public class Questions extends Fragment {
 
-//    List<GVQuestion> questions = new ArrayList<>();
-
     private Activity mActivity;
 
     /**
      * Mobile Service Table used to access data
      */
     private MobileServiceTable<GVQuestion> mQuestionTable;
-
-//    /**
-//     * mAdapter to sync the items list with the view
-//     */
-//    private GVQuestionAdapter mAdapter;
-
-    MobileServiceClient mClient;
-
     private QuestionAdapter mAdapter;
 
     public Questions() {
@@ -71,13 +61,6 @@ public class Questions extends Fragment {
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionTable = mClient.getTable(GVQuestion.class);
 
-        // Offline Sync
-//        mQuestionTable = mClient.getSyncTable("GVQuestion", GVQuestion.class);
-
-        // Load the items from the Mobile Service
-
-
-//        setInitialData();
         RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_list);
         // создаем адаптер
         mAdapter = new QuestionAdapter(getView().getContext());
@@ -92,22 +75,11 @@ public class Questions extends Fragment {
             public void onClick(View view) {
             Intent intent = new Intent(getActivity(), AddNewQuestionActivity.class);
             startActivity(intent);
-
-//                Snackbar.make(view, view + "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
             }
         });
 
 
     }
-
-//    private void setInitialData(){
-//
-//        questions.add(new GVQuestion("Huawei P10", "Huawei"));
-//        questions.add(new GVQuestion("Elite z3", "HP"));
-//        questions.add(new GVQuestion("Galaxy S8", "Samsung"));
-//        questions.add(new GVQuestion("LG G 5", "LG"));
-//    }
 
     /**
      * Refresh the list with the items in the Table
@@ -123,9 +95,6 @@ public class Questions extends Fragment {
 
                 try {
                     final List<GVQuestion> results = refreshItemsFromMobileServiceTable();
-
-                    //Offline Sync
-//                    final List<GVQuestion> results = refreshItemsFromMobileServiceTableSyncTable();
 
                     mActivity.runOnUiThread(new Runnable() {
                         @Override
@@ -156,18 +125,6 @@ public class Questions extends Fragment {
     private List<GVQuestion> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
         return mQuestionTable.where().field("UserId").eq("89507355808").execute().get();
     }
-
-    //Offline Sync
-//    /**
-//     * Refresh the list with the items in the Mobile Service Sync Table
-//     */
-//    private List<GVQuestion> refreshItemsFromMobileServiceTableSyncTable() throws ExecutionException, InterruptedException {
-//        //sync the data
-//        sync().get();
-//        Query query = QueryOperations.field("complete").
-//                eq(val(false));
-//        return mQuestionTable.read(query).get();
-//    }
 
     /**
      * Run an ASync task on the corresponding executor

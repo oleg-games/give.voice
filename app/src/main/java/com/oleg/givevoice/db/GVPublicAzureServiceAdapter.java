@@ -8,7 +8,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.gson.JsonElement;
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.http.NextServiceFilterCallback;
 import com.microsoft.windowsazure.mobileservices.http.OkHttpClientFactory;
@@ -64,7 +63,7 @@ public class GVPublicAzureServiceAdapter {
                             String code = "";
 
                             if (settings.contains("code")) {
-                                phone = settings.getString("code", "");
+                                code = settings.getString("code", "");
                             }
 
                             // Set custom header
@@ -83,7 +82,8 @@ public class GVPublicAzureServiceAdapter {
                                 public void onSuccess(ServiceFilterResponse response) {
                                     System.out.println("13213");
                                     String token = response.getHeaders().get("token");
-                                    if (!token.isEmpty()) {
+
+                                    if (token != null && !token.isEmpty()) {
                                         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
                                         SharedPreferences.Editor editor = settings.edit();
                                         editor.putString("token", token);
@@ -109,52 +109,3 @@ public class GVPublicAzureServiceAdapter {
         }
     }
 }
-
-//                    ListenableFuture<ServiceFilterResponse> responseFuture = nextServiceFilter.onNext(request);
-
-//                    Futures.addCallback(responseFuture, new FutureCallback<ServiceFilterResponse>() {
-//                        @Override
-//                        public void onSuccess(ServiceFilterResponse result) {
-//                            System.out.print("a");
-//
-//                        }
-//
-//                        @Override
-//                        public void onFailure(Throwable exc) {
-////                            error.setError(ErrorHelper.Error.NETWORK_ERROR);
-//                        }
-//                    });
-
-//                    return responseFuture;
-//                    SettableFuture<ServiceFilterResponse> result = SettableFuture.create();
-//                    try {
-//                        ServiceFilterResponse response = nextServiceFilter.onNext(request).get();
-//                        result.set(response);
-//
-//                    } catch (Exception exc) {
-//                        result.setException(exc);
-//                    }
-//                    return result;
-//                }
-
-
-//            }
-
-
-//        @Override
-//        public ListenableFuture<ServiceFilterResponse> handleRequest(ServiceFilterRequest request, NextServiceFilterCallback next) {
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    request.addHeader("X-APIM-Router", "mobileBackend");
-//                }
-//            });
-//            SettableFuture<ServiceFilterResponse> result = SettableFuture.create();
-//            try {
-//                ServiceFilterResponse response = next.onNext(request).get();
-//                result.set(response);
-//            } catch (Exception exc) {
-//                result.setException(exc);
-//            }
-//        }
-//        );

@@ -14,6 +14,7 @@
     <string name="action_example">Example action</string>
 
     <string name="action_questions">Qustions</string>
+    <string name="action_questions_answers">Qustions Answers</string>
     <string name="action_answers">Answers</string>
     <string name="action_settings">Settings</string>
     <!--<string name="nav_header_title">Android Studio</string>-->

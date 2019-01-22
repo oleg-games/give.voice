@@ -17,6 +17,20 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
+            android:name=".main.LoginActivity"
+            android:label="@string/title_activity_login"
+            android:parentActivityName=".main.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".main.VerifyCodeLoginActivity"
+            android:parentActivityName=".main.LoginActivity">
+        </activity>
+        <activity
             android:name=".main.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBar">
@@ -40,19 +54,19 @@
                 android:value=".main.MainActivity" />
         </activity>
         <activity
-            android:name=".main.LoginActivity"
-            android:label="@string/title_activity_login"
+            android:name=".questionsanswers.GetQuestionAnswerActivity"
             android:parentActivityName=".main.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Parent activity meta-data to support 4.0 and lower -->
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".main.MainActivity" />
         </activity>
-        <activity
-            android:name=".main.VerifyCodeLoginActivity"
-            android:parentActivityName=".main.LoginActivity">
-        </activity>
+
     </application>
 
 </manifest>

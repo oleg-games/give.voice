@@ -1,9 +1,20 @@
-package com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswers;
+package com.oleg.givevoice.db.gvquestionsanswers;
+
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import java.io.Serializable;
 
 /**
  * Represents an item in a ToDo list
  */
-public class GVQuestionAnswer {
+public class GVQuestionAnswer implements Serializable {
+
+    /**
+     * Item text
+     */
+    @com.google.gson.annotations.SerializedName("question")
+    private String mQuestion;
 
     /**
      * Item text
@@ -36,6 +47,14 @@ public class GVQuestionAnswer {
 
     }
 
+    protected GVQuestionAnswer(Parcel in) {
+        mQuestion = in.readString();
+        mText = in.readString();
+        mId = in.readString();
+        mQuestionId = in.readString();
+        mToPhone = in.readString();
+    }
+    
     @Override
     public String toString() {
         return getText();
@@ -69,6 +88,23 @@ public class GVQuestionAnswer {
      */
     public final void setText(String text) {
         mText = text;
+    }
+
+    /**
+     * Returns the item text
+     */
+    public String getQuestion() {
+        return mQuestion;
+    }
+
+    /**
+     * Sets the item text
+     *
+     * @param text
+     *            text to set
+     */
+    public final void setQuestion(String text) {
+        mQuestion = text;
     }
 
     /**
@@ -135,9 +171,4 @@ public class GVQuestionAnswer {
 //    public void setComplete(boolean complete) {
 //        mComplete = complete;
 //    }
-
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof GVQuestionAnswer && ((GVQuestionAnswer) o).mId == mId;
-    }
 }

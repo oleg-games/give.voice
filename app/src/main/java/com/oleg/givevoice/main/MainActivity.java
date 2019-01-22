@@ -1,11 +1,7 @@
 package com.oleg.givevoice.main;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -15,13 +11,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.answers.Answers;
-import com.oleg.givevoice.db.GVAzureServiceAdapter;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.questions.Questions;
+import com.oleg.givevoice.questionsanswers.QuestionsAnswers;
 import com.oleg.givevoice.settings.Settings;
 
 public class MainActivity extends AppCompatActivity
@@ -33,20 +28,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-//        SharedPreferences settings = PreferenceManager
-//                .getDefaultSharedPreferences(this);
-//        SharedPreferences.Editor editor = settings.edit();
-//        editor.putString("phone", "89507355808");
-//        editor.commit();
-//
-//        SharedPreferences settings = PreferenceManager
-//                .getDefaultSharedPreferences(this);
-//        SharedPreferences.Editor editor = settings.edit();
-//
-//        if(settings.contains("phone")) {
-//            String text = settings.getString("phone", "");
-//        }
 
         try {
             GVPrivateAzureServiceAdapter.Initialize(this);
@@ -121,6 +102,9 @@ public class MainActivity extends AppCompatActivity
                 break;
             case R.id.answers:
                 fragment = new Answers();
+                break;
+            case R.id.questions_answers:
+                fragment = new QuestionsAnswers();
                 break;
             case R.id.settings:
                 fragment = new Settings();

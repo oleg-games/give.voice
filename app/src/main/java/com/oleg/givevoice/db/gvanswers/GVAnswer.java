@@ -8,8 +8,8 @@ public class GVAnswer {
     /**
      * Item text
      */
-    @com.google.gson.annotations.SerializedName("AnswerText")
-    private String mQuestionText;
+    @com.google.gson.annotations.SerializedName("text")
+    private String mText;
 
     /**
      * Item Id
@@ -17,11 +17,17 @@ public class GVAnswer {
     @com.google.gson.annotations.SerializedName("id")
     private String mId;
 
-//    /**
-//     * Indicates if the item is completed
-//     */
-//    @com.google.gson.annotations.SerializedName("complete")
-//    private boolean mComplete;
+    /**
+     * Item Id
+     */
+    @com.google.gson.annotations.SerializedName("questionId")
+    private String mQuestionId;
+
+    /**
+     * Item Id
+     */
+    @com.google.gson.annotations.SerializedName("toPhone")
+    private String mToPhone;
 
     /**
      * GVQuestion constructor
@@ -32,7 +38,7 @@ public class GVAnswer {
 
     @Override
     public String toString() {
-        return getQuestionText();
+        return getText();
     }
 
     /**
@@ -44,15 +50,15 @@ public class GVAnswer {
      *            The item id
      */
     public GVAnswer(String text, String id) {
-        this.setQuestionText(text);
+        this.setText(text);
         this.setId(id);
     }
 
     /**
      * Returns the item text
      */
-    public String getQuestionText() {
-        return mQuestionText;
+    public String getText() {
+        return mText;
     }
 
     /**
@@ -61,8 +67,8 @@ public class GVAnswer {
      * @param text
      *            text to set
      */
-    public final void setQuestionText(String text) {
-        mQuestionText = text;
+    public final void setText(String text) {
+        mText = text;
     }
 
     /**
@@ -80,6 +86,40 @@ public class GVAnswer {
      */
     public final void setId(String id) {
         mId = id;
+    }
+
+    /**
+     * Returns the item id
+     */
+    public String getQuestionId() {
+        return mQuestionId;
+    }
+
+    /**
+     * Sets the item id
+     *
+     * @param id
+     *            id to set
+     */
+    public final void setQuestionId(String id) {
+        mQuestionId = id;
+    }
+
+    /**
+     * Returns the item id
+     */
+    public String getToPhone() {
+        return mToPhone;
+    }
+
+    /**
+     * Sets the item id
+     *
+     * @param phone
+     *            id to set
+     */
+    public final void setToPhone(String phone) {
+        mToPhone= phone;
     }
 
 //    /**

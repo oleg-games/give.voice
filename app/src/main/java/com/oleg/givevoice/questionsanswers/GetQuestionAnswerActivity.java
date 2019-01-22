@@ -1,4 +1,4 @@
-package com.oleg.givevoice.questions;
+package com.oleg.givevoice.questionsanswers;
 
 import android.Manifest;
 import android.app.Activity;
@@ -24,14 +24,16 @@ import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
 import com.oleg.givevoice.main.MainActivity;
+import com.oleg.givevoice.questions.QuestionAdapter;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class AddNewQuestionActivity extends AppCompatActivity {
+public class GetQuestionAnswerActivity extends AppCompatActivity {
 
     String questionId;
     String fromPhone;
@@ -39,7 +41,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_add_new_question);
+        setContentView(R.layout.activity_add_get_question_answer);
+
+        GVQuestionAnswer place = (GVQuestionAnswer) getIntent().getSerializableExtra("question_answer");
 
         GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
@@ -69,8 +73,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                         GVQuestion question = addItemInTable(item);
                         questionId = question.getId();
                         setPhoneContacts();
-                        Intent intent = new Intent(activity, MainActivity.class);
-                        startActivity(intent);
+//                        Intent intent = new Intent(activity, MainActivity.class);
+//                        intent.putExtra("name_of_extra", myParcelableObject);
+//                        startActivity(intent);
                     } catch (final Exception e) {
                         createAndShowDialogFromTask(e, "Error");
                     }

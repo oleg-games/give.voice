@@ -1,4 +1,4 @@
-package com.oleg.givevoice.db.gvquestionsanswers.gvanswers;
+package com.oleg.givevoice.db.gvquestionsanswers;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,7 +10,7 @@ import android.widget.ArrayAdapter;
 /**
  * Adapter to bind a GVAnswer List to a view
  */
-public class GVQuestionAnswerAdapter extends ArrayAdapter<com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswers.GVQuestionAnswer> {
+public class GVQuestionAnswerAdapter extends ArrayAdapter<GVQuestionAnswer> {
 
     /**
      * Adapter context

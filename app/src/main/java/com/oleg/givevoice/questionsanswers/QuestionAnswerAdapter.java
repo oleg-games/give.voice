@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.oleg.givevoice.R;
-import com.oleg.givevoice.db.gvanswers.GVAnswer;
+import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,20 +16,24 @@ import java.util.List;
 public class QuestionAnswerAdapter extends RecyclerView.Adapter<QuestionAnswerAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
-    private List<GVAnswer> answers;
+    private List<GVQuestionAnswer> answers;
 
     public QuestionAnswerAdapter(Context context) {
         this.answers = new ArrayList<>();
         this.inflater = LayoutInflater.from(context);
     }
 
-    public QuestionAnswerAdapter(Context context, List<GVAnswer> answers) {
+    public QuestionAnswerAdapter(Context context, List<GVQuestionAnswer> answers) {
         this.answers= answers;
         this.inflater = LayoutInflater.from(context);
     }
 
-    public void add(GVAnswer question) {
+    public void add(GVQuestionAnswer question) {
         answers.add(question);
+    }
+
+    public GVQuestionAnswer get(int position) {
+        return answers.get(position);
     }
 
     public void clear() {
@@ -39,14 +43,14 @@ public class QuestionAnswerAdapter extends RecyclerView.Adapter<QuestionAnswerAd
     @Override
     public QuestionAnswerAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-        View view = inflater.inflate(R.layout.answers_item, parent, false);
+        View view = inflater.inflate(R.layout.questions_answers_item, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(QuestionAnswerAdapter.ViewHolder holder, int position) {
-        GVAnswer question = answers.get(position);
-        holder.answerTextView.setText(question.getText());
+        GVQuestionAnswer question = answers.get(position);
+        holder.answerTextView.setText(question.getQuestion());
     }
 
     @Override
