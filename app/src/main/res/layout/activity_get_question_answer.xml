@@ -7,47 +7,72 @@
     tools:context=".questions.AddNewQuestionActivity"
     tools:layout_editor_absoluteY="81dp">
 
-    <EditText
-        android:id="@+id/question_text"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="14dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="434dp"
-        android:autofillHints="@string/action_questions"
-        android:ems="10"
-        android:hint="@string/action_questions"
-        android:inputType="textPersonName"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/question_label_text" />
-
     <TextView
-        android:id="@+id/question_label_text"
+        android:id="@+id/question_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="310dp"
-        android:layout_marginBottom="13dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="311dp"
+        android:layout_marginBottom="168dp"
         android:text="@string/title_question"
         app:layout_constraintBottom_toTopOf="@+id/question_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/question_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="311dp"
+        android:text="@string/title_question"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/question_label" />
+
+    <EditText
+        android:id="@+id/getAnswerEditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="143dp"
+        android:ems="10"
+        android:hint="@string/action_answer"
+        android:inputType="textPersonName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/question_text" />
+
     <Button
-        android:id="@+id/add_button"
+        android:id="@+id/get_answer_button"
         android:layout_width="335dp"
         android:layout_height="51dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="7dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/button_add"
+        android:text="@string/button_get_answer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/getAnswerEditText" />
+
+    <ImageView
+        android:id="@+id/question_answer_image_view"
+        android:layout_width="398dp"
+        android:layout_height="407dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="19dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="88dp"
+        android:contentDescription="@string/action_questions"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/get_answer_button"
+        tools:srcCompat="@mipmap/ic_launcher_round" />
+
 </android.support.constraint.ConstraintLayout>

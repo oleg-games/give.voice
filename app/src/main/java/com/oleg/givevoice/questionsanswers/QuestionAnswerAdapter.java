@@ -16,28 +16,28 @@ import java.util.List;
 public class QuestionAnswerAdapter extends RecyclerView.Adapter<QuestionAnswerAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
-    private List<GVQuestionAnswer> answers;
+    private List<GVQuestionAnswer> questionAnswers;
 
     public QuestionAnswerAdapter(Context context) {
-        this.answers = new ArrayList<>();
+        this.questionAnswers = new ArrayList<>();
         this.inflater = LayoutInflater.from(context);
     }
 
-    public QuestionAnswerAdapter(Context context, List<GVQuestionAnswer> answers) {
-        this.answers= answers;
+    public QuestionAnswerAdapter(Context context, List<GVQuestionAnswer> questionAnswers) {
+        this.questionAnswers= questionAnswers;
         this.inflater = LayoutInflater.from(context);
     }
 
-    public void add(GVQuestionAnswer question) {
-        answers.add(question);
+    public void add(GVQuestionAnswer qa) {
+        questionAnswers.add(qa);
     }
 
     public GVQuestionAnswer get(int position) {
-        return answers.get(position);
+        return questionAnswers.get(position);
     }
 
     public void clear() {
-        answers.clear();
+        questionAnswers.clear();
     }
 
     @Override
@@ -49,20 +49,20 @@ public class QuestionAnswerAdapter extends RecyclerView.Adapter<QuestionAnswerAd
 
     @Override
     public void onBindViewHolder(QuestionAnswerAdapter.ViewHolder holder, int position) {
-        GVQuestionAnswer question = answers.get(position);
+        GVQuestionAnswer question = questionAnswers.get(position);
         holder.answerTextView.setText(question.getQuestion());
     }
 
     @Override
     public int getItemCount() {
-        return answers.size();
+        return questionAnswers.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         final TextView answerTextView ;
         ViewHolder(View view){
             super(view);
-            answerTextView = (TextView) view.findViewById(R.id.question_text);
+            answerTextView = (TextView) view.findViewById(R.id.question_answer_text);
         }
     }
 }

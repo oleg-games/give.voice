@@ -3,9 +3,11 @@ package com.oleg.givevoice.questions;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -73,8 +75,8 @@ public class Questions extends Fragment {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-            Intent intent = new Intent(getActivity(), AddNewQuestionActivity.class);
-            startActivity(intent);
+                Intent intent = new Intent(getActivity(), AddNewQuestionActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -93,22 +95,29 @@ public class Questions extends Fragment {
             @Override
             protected Void doInBackground(Void... params) {
 
-                try {
-                    final List<GVQuestion> results = refreshItemsFromMobileServiceTable();
+                SharedPreferences settings = PreferenceManager
+                        .getDefaultSharedPreferences(getContext());
+                final String fromPhone = settings.getString("phone", "");
+                if (fromPhone != null && !fromPhone.isEmpty()) {
+                    try {
+                        final List<GVQuestion> results = refreshItemsFromMobileServiceTable(fromPhone);
 
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mAdapter.clear();
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.clear();
 
-                            for (GVQuestion item : results) {
-                                mAdapter.add(item);
+                                for (GVQuestion item : results) {
+                                    mAdapter.add(item);
+                                }
+                                mAdapter.notifyDataSetChanged();
                             }
-                            mAdapter.notifyDataSetChanged();
-                        }
-                    });
-                } catch (final Exception e){
-                    createAndShowDialogFromTask(e, "Error");
+                        });
+                    } catch (final Exception e){
+                        createAndShowDialogFromTask(e, "Error");
+                    }
+                } else {
+                    // TODO
                 }
 
                 return null;
@@ -122,8 +131,8 @@ public class Questions extends Fragment {
      * Refresh the list with the items in the Mobile Service Table
      */
 
-    private List<GVQuestion> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
-        return mQuestionTable.where().field("UserId").eq("89507355808").execute().get();
+    private List<GVQuestion> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
+        return mQuestionTable.where().field("UserId").eq(phoneNumber).execute().get();
     }
 
     /**

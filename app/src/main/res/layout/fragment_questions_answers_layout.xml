@@ -27,7 +27,7 @@
         android:layout_below="@+id/linearLayoutOne">
 
         <android.support.v7.widget.RecyclerView
-            android:id="@+id/answers_list"
+            android:id="@+id/questions_answers_list"
             app:layoutManager="android.support.v7.widget.GridLayoutManager"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

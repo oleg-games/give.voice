@@ -1,28 +1,10 @@
 package com.oleg.givevoice.questionsanswers;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.view.GestureDetector;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-
-import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
-import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
-import com.oleg.givevoice.R;
-import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
-import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
-
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Belal on 18/09/16.

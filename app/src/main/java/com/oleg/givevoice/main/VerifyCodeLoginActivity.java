@@ -1,6 +1,5 @@
 package com.oleg.givevoice.main;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -31,8 +30,6 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
     private MobileServiceTable<GVVerificationUser> mVerificationUserTable;
 
     private GVVerificationUser currentUser;
-    private View mProgressView;
-//    private View mLoginFormView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,104 +41,50 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
         MobileServiceClient mClient = servicemAdapter.getClient();
         mVerificationUserTable = mClient.getTable(GVVerificationUser.class);
 
-        Button button = (Button) findViewById(R.id.verifyButton);
-
-
+        Button button = findViewById(R.id.verifyButton);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences settings = PreferenceManager
-                        .getDefaultSharedPreferences(v.getContext());
-                final String phone = settings.getString("phone", "");
-                final EditText edit = (EditText) findViewById(R.id.editText);
+                final EditText edit = findViewById(R.id.editText);
                 final Context context = v.getContext();
-                AsyncTask<Void, Void, Void> task1 = new AsyncTask<Void, Void, Void>(){
+                AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
                     @Override
                     protected Void doInBackground(Void... params) {
-                        try {
-                            showProgress(true);
-//                    final List<GVVerificationUser> users = getItemsInTable(phone);
-                            final List<GVVerificationUser> users = mVerificationUserTable.where().field("userPhone").eq(phone).execute().get();
-                            currentUser = users.get(0);
-                            showProgress(false);
-                            if (currentUser != null) {
-                                currentUser.setCode(edit.getText().toString());
-                                try {
-                                    updateItemInTable(currentUser);
-                                    Intent intent = new Intent(context, MainActivity.class);
-                                    startActivity(intent);
-                                } catch (final Exception e) {
-                                    createAndShowDialogFromTask(e, "Error");
+                        SharedPreferences settings = PreferenceManager
+                                .getDefaultSharedPreferences(context);
+                        final String phoneNumber = settings.getString("phone", "");
+
+                        if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                            try {
+                                final List<GVVerificationUser> users = mVerificationUserTable.where().field("userPhone").eq(phoneNumber).execute().get();
+                                currentUser = users.get(0);
+                                if (currentUser != null) {
+                                    currentUser.setCode(edit.getText().toString());
+                                    try {
+                                        updateItemInTable(currentUser);
+                                        Intent intent = new Intent(context, MainActivity.class);
+                                        startActivity(intent);
+                                    } catch (final Exception e) {
+                                        createAndShowDialogFromTask(e, "Error");
+                                    }
                                 }
+                            } catch (final Exception e) {
+                                createAndShowDialogFromTask(e, "Error");
                             }
-                        } catch (final Exception e) {
-                            createAndShowDialogFromTask(e, "Error");
+                        } else {
+                            // TODO
                         }
+
                         return null;
                     }
                 };
 
-                runAsyncTask(task1);
-
-//                if (currentUser != null) {
-//                    currentUser.setCode(edit.getText().toString());
-//
-//                    AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-//                        @Override
-//                        protected Void doInBackground(Void... params) {
-//                            try {
-//                                updateItemInTable(currentUser);
-//                            } catch (final Exception e) {
-//                                createAndShowDialogFromTask(e, "Error");
-//                            }
-//                            return null;
-//                        }
-//                    };
-//
-//                    runAsyncTask(task);
-//                }
+                runAsyncTask(task);
             }
         });
-//        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
     }
 
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-//            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-//            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-//            mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-//                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-//                @Override
-//                public void onAnimationEnd(Animator animation) {
-//                    mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-//                }
-//            });
-
-//            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-//            mProgressView.animate().setDuration(shortAnimTime).alpha(
-//                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-//                @Override
-//                public void onAnimationEnd(Animator animation) {
-//                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-//                }
-//            });
-//        } else {
-//            // The ViewPropertyAnimator APIs are not available, so simply show
-//            // and hide the relevant UI components.
-//            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-////            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-//        }
-    }
 
     /**
      * Run an ASync task on the corresponding executor
@@ -215,9 +158,5 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
     public GVVerificationUser updateItemInTable(GVVerificationUser item) throws ExecutionException, InterruptedException {
         GVVerificationUser entity = mVerificationUserTable.update(item).get();
         return entity;
-    }
-
-    public List<GVVerificationUser> getItemsInTable(String phone) throws ExecutionException, InterruptedException {
-        return mVerificationUserTable.where().field("userPhone").eq(phone).execute().get();
     }
 }

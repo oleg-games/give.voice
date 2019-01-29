@@ -3,10 +3,11 @@ package com.oleg.givevoice.questionsanswers;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
@@ -18,11 +19,8 @@ import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
-import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
-import com.oleg.givevoice.main.MainActivity;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -39,7 +37,7 @@ public class QuestionsAnswers extends Fragment {
     /**
      * Mobile Service Table used to access data
      */
-    private MobileServiceTable<GVQuestionAnswer> mAnswerTable;
+    private MobileServiceTable<GVQuestionAnswer> mQuestionAnswerTable;
     private QuestionAnswerAdapter mAdapter;
 
     public QuestionsAnswers() {
@@ -62,9 +60,9 @@ public class QuestionsAnswers extends Fragment {
 
         GVPrivateAzureServiceAdapter serviceAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = serviceAdapter.getClient();
-        mAnswerTable = mClient.getTable(GVQuestionAnswer.class);
+        mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
 
-        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.answers_list);
+        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_answers_list);
         // создаем адаптер
         mAdapter = new QuestionAnswerAdapter(getView().getContext());
         refreshItemsFromTable();
@@ -78,7 +76,7 @@ public class QuestionsAnswers extends Fragment {
                         // do whatever
                         GVQuestionAnswer item = mAdapter.get(position);
                         Intent intent = new Intent(mActivity, GetQuestionAnswerActivity.class);
-                        intent.putExtra("question_answer", item);
+                        intent.putExtra(GVQuestionAnswer.class.getSimpleName(), item);
                         startActivity(intent);
                     }
 
@@ -88,19 +86,6 @@ public class QuestionsAnswers extends Fragment {
                     }
                 })
         );
-
-
-
-//        FloatingActionButton fab = (FloatingActionButton) getView().findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent intent = new Intent(getActivity(), AddNewQuestionActivity.class);
-//                startActivity(intent);
-//            }
-//        });
-
-
     }
 
     /**
@@ -114,24 +99,29 @@ public class QuestionsAnswers extends Fragment {
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
             @Override
             protected Void doInBackground(Void... params) {
+                SharedPreferences settings = PreferenceManager
+                        .getDefaultSharedPreferences(getContext());
+                final String phoneNumber = settings.getString("phone", "");
+                if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                    try {
+                        final List<GVQuestionAnswer> results = refreshItemsFromMobileServiceTable(phoneNumber);
 
-                try {
-                    final List<GVQuestionAnswer> results = refreshItemsFromMobileServiceTable();
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.clear();
 
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mAdapter.clear();
-
-                            for (GVQuestionAnswer item : results) {
-//                                item.setText("aaa");
-                                mAdapter.add(item);
+                                for (GVQuestionAnswer item : results) {
+                                    mAdapter.add(item);
+                                }
+                                mAdapter.notifyDataSetChanged();
                             }
-                            mAdapter.notifyDataSetChanged();
-                        }
-                    });
-                } catch (final Exception e){
-                    createAndShowDialogFromTask(e, "Error");
+                        });
+                    } catch (final Exception e){
+                        createAndShowDialogFromTask(e, "Error");
+                    }
+                } else {
+                    // TODO
                 }
 
                 return null;
@@ -145,8 +135,8 @@ public class QuestionsAnswers extends Fragment {
      * Refresh the list with the items in the Mobile Service Table
      */
 
-    private List<GVQuestionAnswer> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
-        return mAnswerTable.where().field("toPhone").eq("89507355808").execute().get();
+    private List<GVQuestionAnswer> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
+        return mQuestionAnswerTable.where().field("toPhone").eq(phoneNumber).execute().get();
     }
 
     /**

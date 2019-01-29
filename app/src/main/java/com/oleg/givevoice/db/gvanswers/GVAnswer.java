@@ -49,9 +49,11 @@ public class GVAnswer {
      * @param id
      *            The item id
      */
-    public GVAnswer(String text, String id) {
+    public GVAnswer(String id, String text, String phone, String questionId) {
         this.setText(text);
         this.setId(id);
+        this.setToPhone(phone);
+        this.setQuestionId(questionId);
     }
 
     /**

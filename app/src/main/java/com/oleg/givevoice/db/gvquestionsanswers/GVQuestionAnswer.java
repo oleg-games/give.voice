@@ -1,9 +1,9 @@
 package com.oleg.givevoice.db.gvquestionsanswers;
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import com.oleg.givevoice.db.gvanswers.GVAnswer;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Represents an item in a ToDo list
@@ -15,6 +15,12 @@ public class GVQuestionAnswer implements Serializable {
      */
     @com.google.gson.annotations.SerializedName("question")
     private String mQuestion;
+
+    /**
+     * Item text
+     */
+    @com.google.gson.annotations.SerializedName("questionImage")
+    private String mQuestionImage;
 
     /**
      * Item text
@@ -41,36 +47,16 @@ public class GVQuestionAnswer implements Serializable {
     private String mToPhone;
 
     /**
+     * Item Id
+     */
+    @com.google.gson.annotations.SerializedName("fromPhone")
+    private String mFromPhone;
+
+    /**
      * GVQuestion constructor
      */
     public GVQuestionAnswer() {
 
-    }
-
-    protected GVQuestionAnswer(Parcel in) {
-        mQuestion = in.readString();
-        mText = in.readString();
-        mId = in.readString();
-        mQuestionId = in.readString();
-        mToPhone = in.readString();
-    }
-    
-    @Override
-    public String toString() {
-        return getText();
-    }
-
-    /**
-     * Initializes a new GVQuestion
-     *
-     * @param text
-     *            The item text
-     * @param id
-     *            The item id
-     */
-    public GVQuestionAnswer(String text, String id) {
-        this.setText(text);
-        this.setId(id);
     }
 
     /**
@@ -142,6 +128,16 @@ public class GVQuestionAnswer implements Serializable {
     }
 
     /**
+     * Sets the item id
+     *
+     * @param phone
+     *            id to set
+     */
+    public final void setToPhone(String phone) {
+        mToPhone= phone;
+    }
+
+    /**
      * Returns the item id
      */
     public String getToPhone() {
@@ -154,21 +150,67 @@ public class GVQuestionAnswer implements Serializable {
      * @param phone
      *            id to set
      */
-    public final void setToPhone(String phone) {
-        mToPhone= phone;
+    public final void setFromPhone(String phone) {
+        mFromPhone= phone;
     }
 
-//    /**
-//     * Indicates if the item is marked as completed
-//     */
-//    public boolean isComplete() {
-//        return mComplete;
-//    }
+    /**
+     * Returns the item id
+     */
+    public String getQuestionImage() {
+        return mQuestionImage;
+    }
 
-//    /**
-//     * Marks the item as completed or incompleted
-//     */
-//    public void setComplete(boolean complete) {
-//        mComplete = complete;
-//    }
+    /**
+     * Sets the item id
+     *
+     * @param image
+     *            id to set
+     */
+    public final void setQuestionImage(String image) {
+        mQuestionImage = image;
+    }
+
+    /**
+     * Returns the item id
+     */
+    public String getFromPhone() {
+        return mFromPhone;
+    }
+
+    @Override
+    public String toString() {
+        return "GVQuestionAnswer{" +
+                "mQuestion='" + mQuestion + '\'' +
+                ", mQuestionImage='" + mQuestionImage + '\'' +
+                ", mText='" + mText + '\'' +
+                ", mId='" + mId + '\'' +
+                ", mQuestionId='" + mQuestionId + '\'' +
+                ", mToPhone='" + mToPhone + '\'' +
+                ", mFromPhone='" + mFromPhone + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GVQuestionAnswer that = (GVQuestionAnswer) o;
+        return Objects.equals(mQuestion, that.mQuestion) &&
+                Objects.equals(mQuestionImage, that.mQuestionImage) &&
+                Objects.equals(mText, that.mText) &&
+                Objects.equals(mId, that.mId) &&
+                Objects.equals(mQuestionId, that.mQuestionId) &&
+                Objects.equals(mToPhone, that.mToPhone) &&
+                Objects.equals(mFromPhone, that.mFromPhone);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mQuestion, mQuestionImage, mText, mId, mQuestionId, mToPhone, mFromPhone);
+    }
+
+    public GVAnswer getAnswer() {
+        return new GVAnswer(getId(), getText(), getToPhone(), getQuestionId());
+    }
 }

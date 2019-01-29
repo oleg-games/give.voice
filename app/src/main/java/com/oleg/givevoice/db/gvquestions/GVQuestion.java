@@ -1,6 +1,7 @@
 package com.oleg.givevoice.db.gvquestions;
 
 import java.math.BigInteger;
+import java.util.Objects;
 
 /**
  * Represents an item in a ToDo list
@@ -19,17 +20,27 @@ public class GVQuestion {
     @com.google.gson.annotations.SerializedName("id")
     private String mId;
 
-//    /**
-//     * Item photo
-//     */
-//    @com.google.gson.annotations.SerializedName("Photo")
-//    private String mPhoto;
+    /**
+     * Item image
+     */
+    @com.google.gson.annotations.SerializedName("image")
+    private String mImage;
 
-//    /**
-//     * Indicates if the item deleted
-//     */
-//    @com.google.gson.annotations.SerializedName("deleted")
-//    private boolean mDeleted;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GVQuestion that = (GVQuestion) o;
+        return Objects.equals(mText, that.mText) &&
+                Objects.equals(mId, that.mId) &&
+                Objects.equals(mImage, that.mImage) &&
+                Objects.equals(mUserId, that.mUserId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mText, mId, mImage, mUserId);
+    }
 
     /**
      * Indicates if the item deleted
@@ -46,7 +57,12 @@ public class GVQuestion {
 
     @Override
     public String toString() {
-        return getText();
+        return "GVQuestion{" +
+                "mText='" + mText + '\'' +
+                ", mId='" + mId + '\'' +
+                ", mImage='" + mImage + '\'' +
+                ", mUserId=" + mUserId +
+                '}';
     }
 
     /**
@@ -114,26 +130,20 @@ public class GVQuestion {
         mUserId = id;
     }
 
+    /**
+     * Returns the item id
+     */
+    public String getImage() {
+        return mImage;
+    }
 
     /**
-     * Indicates if the item is marked as completed
+     * Sets the item id
+     *
+     * @param image
+     *            id to set
      */
-//    public boolean isDeleted() {
-//        return mDeleted;
-//    }
-//    public boolean getDeleted() {
-//        return mDeleted;
-//    }
-//    /**
-//     * Marks the item as completed or incompleted
-//     */
-//    public void setDeleted(boolean deleted) {
-//        mDeleted = deleted;
-//    }
-
-//    /!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof GVQuestion && ((GVQuestion) o).mId == mId;
+    public final void setImage(String image) {
+        mImage = image;
     }
 }

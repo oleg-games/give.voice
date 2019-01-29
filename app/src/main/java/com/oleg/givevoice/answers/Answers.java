@@ -2,9 +2,11 @@ package com.oleg.givevoice.answers;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
@@ -91,24 +93,31 @@ public class Answers extends Fragment {
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
             @Override
             protected Void doInBackground(Void... params) {
+                SharedPreferences settings = PreferenceManager
+                        .getDefaultSharedPreferences(getContext());
+                final String fromPhone = settings.getString("phone", "");
 
-                try {
-                    final List<GVAnswer> results = refreshItemsFromMobileServiceTable();
+                if (fromPhone != null && !fromPhone.isEmpty()) {
+                    try {
+                        final List<GVAnswer> results = refreshItemsFromMobileServiceTable(fromPhone);
 
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mAdapter.clear();
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.clear();
 
-                            for (GVAnswer item : results) {
-                                item.setText("aaa");
-                                mAdapter.add(item);
+                                for (GVAnswer item : results) {
+                                    item.setText("aaa");
+                                    mAdapter.add(item);
+                                }
+                                mAdapter.notifyDataSetChanged();
                             }
-                            mAdapter.notifyDataSetChanged();
-                        }
-                    });
-                } catch (final Exception e){
-                    createAndShowDialogFromTask(e, "Error");
+                        });
+                    } catch (final Exception e){
+                        createAndShowDialogFromTask(e, "Error");
+                    }
+                } else {
+                    // TODO
                 }
 
                 return null;
@@ -122,8 +131,8 @@ public class Answers extends Fragment {
      * Refresh the list with the items in the Mobile Service Table
      */
 
-    private List<GVAnswer> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
-        return mAnswerTable.where().field("toPhone").eq("89507355808").execute().get();
+    private List<GVAnswer> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
+        return mAnswerTable.where().field("toPhone").eq(phoneNumber).execute().get();
     }
 
     /**

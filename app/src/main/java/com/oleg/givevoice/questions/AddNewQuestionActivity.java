@@ -5,17 +5,20 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
@@ -23,9 +26,11 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvanswers.GVAnswer;
+import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
 import com.oleg.givevoice.main.MainActivity;
 
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +52,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         mAnswerTable = mClient.getTable(GVAnswer.class);
         final Activity activity = this;
         mActivity = this;
-//        Button button = (Button) findViewById(R.id.button);
-        Button button = (Button) findViewById(R.id.add_question_button);
+        Button button = (Button) findViewById(R.id.add_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
@@ -56,31 +60,62 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                 final GVQuestion item = new GVQuestion();
 
                 item.setText(edit.getText().toString());
-                fromPhone = "89507355808";
+                SharedPreferences settings = PreferenceManager
+                        .getDefaultSharedPreferences(v.getContext());
+                final String fromPhone = settings.getString("phone", "");
 
-                BigInteger fromPhoneInteger = new BigInteger(fromPhone);
-                item.setUserId(fromPhoneInteger);
+                if (fromPhone != null && !fromPhone.isEmpty()) {
+                    BigInteger fromPhoneInteger = new BigInteger(fromPhone);
+                    item.setUserId(fromPhoneInteger);
 
-                // Insert the new item
-                AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-                    @Override
-                    protected Void doInBackground(Void... params) {
-                    try {
-                        GVQuestion question = addItemInTable(item);
-                        questionId = question.getId();
-                        setPhoneContacts();
-                        Intent intent = new Intent(activity, MainActivity.class);
-                        startActivity(intent);
-                    } catch (final Exception e) {
-                        createAndShowDialogFromTask(e, "Error");
-                    }
-                    return null;
-                    }
-                };
+                    // Insert the new item
+                    AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
+                        @Override
+                        protected Void doInBackground(Void... params) {
+                            try {
+                                String imageName = uploadImage();
+                                item.setImage(imageName);
+                                GVQuestion question = addItemInTable(item);
+                                questionId = question.getId();
+                                setPhoneContacts();
+                                Intent intent = new Intent(activity, MainActivity.class);
+                                startActivity(intent);
+                            } catch (final Exception e) {
+                                createAndShowDialogFromTask(e, "Error");
+                            }
+                            return null;
+                        }
+                    };
 
-                runAsyncTask(task);
+                    runAsyncTask(task);
+                }
             }
         });
+
+        Button selectImageButton = findViewById(R.id.select_image);
+        selectImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SelectImageFromGallery();
+            }
+        });
+
+//        this.uploadImageButton = (Button) findViewById(R.id.upload);
+//        this.uploadImageButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                UploadImage();
+//            }
+//        });
+        this.imageView = findViewById(R.id.question_image_view);
+    }
+
+    private void SelectImageFromGallery()
+    {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_IMAGE);
     }
 
 //    public void setPhoneContactsIntoArrayList(){
@@ -171,7 +206,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                             phones.add(phoneNumber);
                             GVAnswer item = new GVAnswer();
                             item.setQuestionId(questionId);
-                            item.setToPhone(fromPhone);
+                            item.setToPhone(phoneNumber);
                             addItemInTableAnswer(item);
 //                            output.append("\n Телефон: " + phoneNumber);
                         }
@@ -464,4 +499,64 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         return entity;
     }
 
+    private Uri imageUri;
+    private static final int SELECT_IMAGE = 100;
+    private ImageView imageView;
+    private Button uploadImageButton;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+
+        switch (requestCode) {
+            case SELECT_IMAGE:
+                if (resultCode == RESULT_OK) {
+                    this.imageUri = imageReturnedIntent.getData();
+                    this.imageView.setImageURI(this.imageUri);
+//                    this.uploadImageButton.setEnabled(true);
+                }
+        }
+    }
+
+    private String uploadImage()
+    {
+        String imageName = null;
+        if (this.imageUri != null) {
+            try {
+
+                final InputStream imageStream = getContentResolver().openInputStream(this.imageUri);
+                final int imageLength = imageStream.available();
+
+//            final Handler handler = new Handler();
+
+//            Thread th = new Thread(new Runnable() {
+//                public void run() {
+
+//                    try {
+
+                imageName = ImageManager.UploadImage(imageStream, imageLength);
+//                        handler.post(new Runnable() {
+//
+//                            public void run() {
+//                                Toast.makeText(AddNewQuestionActivity.this, "Image Uploaded Successfully. Name = " + imageName, Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
+//                    }
+//                    catch(Exception ex) {
+//                        final String exceptionMessage = ex.getMessage();
+//                        handler.post(new Runnable() {
+//                            public void run() {
+//                                Toast.makeText(AddNewQuestionActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
+//                    }
+//                }});
+//            th.start();
+            } catch (Exception ex) {
+
+//            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        return imageName;
+    }
 }

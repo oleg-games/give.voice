@@ -1,5 +1,7 @@
 package com.oleg.givevoice.db.gvverificationuser;
 
+import java.util.Objects;
+
 /**
  * Represents an item in a ToDo list
  */
@@ -28,24 +30,6 @@ public class GVVerificationUser{
      */
     public GVVerificationUser() {
 
-    }
-
-//    @Override
-//    public String toString() {
-//        return getQuestionText();
-//    }
-
-    /**
-     * Initializes a new GVQuestion
-     *
-     * @param mUserPhone
-     *            The item text
-     * @param id
-     *            The item id
-     */
-    public GVVerificationUser(String mUserPhone, String id) {
-        this.setUserPhone(mUserPhone);
-        this.setId(id);
     }
 
     /**
@@ -99,23 +83,27 @@ public class GVVerificationUser{
         mCode= text;
     }
 
-//    /**
-//     * Indicates if the item is marked as completed
-//     */
-//    public boolean isDeleted() {
-//        return mDeleted;
-//    }
-//
-//    /**
-//     * Marks the item as completed or incompleted
-//     */
-//    public void setDeleted(boolean deleted) {
-//        mDeleted = deleted;
-//    }
+    @Override
+    public String toString() {
+        return "GVVerificationUser{" +
+                "mUserPhone='" + mUserPhone + '\'' +
+                ", mId='" + mId + '\'' +
+                ", mCode='" + mCode + '\'' +
+                '}';
+    }
 
-//    /!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     @Override
     public boolean equals(Object o) {
-        return o instanceof GVVerificationUser && ((GVVerificationUser) o).mId == mId;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GVVerificationUser that = (GVVerificationUser) o;
+        return Objects.equals(mUserPhone, that.mUserPhone) &&
+                Objects.equals(mId, that.mId) &&
+                Objects.equals(mCode, that.mCode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mUserPhone, mId, mCode);
     }
 }

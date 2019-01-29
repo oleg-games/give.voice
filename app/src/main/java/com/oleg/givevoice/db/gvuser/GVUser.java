@@ -1,5 +1,7 @@
 package com.oleg.givevoice.db.gvuser;
 
+import java.util.Objects;
+
 /**
  * Represents an item in a ToDo list
  */
@@ -28,24 +30,6 @@ public class GVUser {
      */
     public GVUser() {
 
-    }
-
-    @Override
-    public String toString() {
-        return getText();
-    }
-
-    /**
-     * Initializes a new UserItem
-     *
-     * @param text
-     *            The item text
-     * @param id
-     *            The item id
-     */
-    public GVUser(String text, String id) {
-        this.setText(text);
-        this.setId(id);
     }
 
     /**
@@ -82,22 +66,27 @@ public class GVUser {
         mId = id;
     }
 
-    /**
-     * Indicates if the item is marked as completed
-     */
-    public boolean isComplete() {
-        return mComplete;
-    }
-
-    /**
-     * Marks the item as completed or incompleted
-     */
-    public void setComplete(boolean complete) {
-        mComplete = complete;
+    @Override
+    public String toString() {
+        return "GVUser{" +
+                "mText='" + mText + '\'' +
+                ", mId='" + mId + '\'' +
+                ", mComplete=" + mComplete +
+                '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof GVUser && ((GVUser) o).mId == mId;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GVUser gvUser = (GVUser) o;
+        return mComplete == gvUser.mComplete &&
+                Objects.equals(mText, gvUser.mText) &&
+                Objects.equals(mId, gvUser.mId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mText, mId, mComplete);
     }
 }

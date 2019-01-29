@@ -7,15 +7,20 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
@@ -23,12 +28,11 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvanswers.GVAnswer;
-import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
 import com.oleg.givevoice.main.MainActivity;
-import com.oleg.givevoice.questions.QuestionAdapter;
 
-import java.math.BigInteger;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -37,55 +41,96 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
 
     String questionId;
     String fromPhone;
+    private Uri imageUri;
+    private static final int SELECT_IMAGE = 100;
+    private ImageView imageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_add_get_question_answer);
+        setContentView(R.layout.activity_get_question_answer);
 
-        GVQuestionAnswer place = (GVQuestionAnswer) getIntent().getSerializableExtra("question_answer");
+        final GVQuestionAnswer itemQA = (GVQuestionAnswer) getIntent().getSerializableExtra(GVQuestionAnswer.class.getSimpleName());
+
+        final TextView textView = (TextView) findViewById(R.id.question_text);
+        textView.setText(itemQA.getQuestion());
 
         GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
-        mQuestionTable = mClient.getTable(GVQuestion.class);
+        mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
         mAnswerTable = mClient.getTable(GVAnswer.class);
-        final Activity activity = this;
+//        final Activity activity = this;
         mActivity = this;
-//        Button button = (Button) findViewById(R.id.button);
-        Button button = (Button) findViewById(R.id.add_question_button);
+////        Button button = (Button) findViewById(R.id.button);
+        Button button = findViewById(R.id.get_answer_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
-                final EditText edit = (EditText) findViewById(R.id.question_text);
-                final GVQuestion item = new GVQuestion();
-
-                item.setText(edit.getText().toString());
-                fromPhone = "89507355808";
-
-                BigInteger fromPhoneInteger = new BigInteger(fromPhone);
-                item.setUserId(fromPhoneInteger);
+                final EditText answerEdit = (EditText) findViewById(R.id.getAnswerEditText);
+                final GVAnswer answer = itemQA.getAnswer();
+                answer.setText(answerEdit.getText().toString());
+//                BigInteger fromPhoneInteger = new BigInteger(fromPhone);
+//                item.setUserId(fromPhoneInteger);
 
                 // Insert the new item
                 AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
                     @Override
                     protected Void doInBackground(Void... params) {
-                    try {
-                        GVQuestion question = addItemInTable(item);
-                        questionId = question.getId();
-                        setPhoneContacts();
-//                        Intent intent = new Intent(activity, MainActivity.class);
-//                        intent.putExtra("name_of_extra", myParcelableObject);
-//                        startActivity(intent);
-                    } catch (final Exception e) {
-                        createAndShowDialogFromTask(e, "Error");
-                    }
-                    return null;
+                        try {
+                            GVAnswer anwerToChange = updateItemInTable(answer);
+                            questionId = anwerToChange.getId();
+                            setPhoneContacts();
+                            Intent intent = new Intent(mActivity, MainActivity.class);
+                            intent.putExtra("fragment", R.id.questions_answers);
+                            startActivity(intent);
+                        } catch (final Exception e) {
+                            createAndShowDialogFromTask(e, "Error");
+                        }
+//                        return 1;
+                        return null;
                     }
                 };
 
                 runAsyncTask(task);
             }
         });
+
+        this.imageView = (ImageView)findViewById(R.id.question_answer_image_view);
+
+        final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+
+        final Handler handler = new Handler();
+
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+
+                try {
+
+                    long imageLength = 0;
+
+                    ImageManager.GetImage(itemQA.getQuestionImage(), imageStream, imageLength);
+
+                    handler.post(new Runnable() {
+
+                        public void run() {
+                            byte[] buffer = imageStream.toByteArray();
+
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+
+                            imageView.setImageBitmap(bitmap);
+                        }
+                    });
+                }
+                catch(Exception ex) {
+                    final String exceptionMessage = ex.getMessage();
+//                    handler.post(new Runnable() {
+//                        public void run() {
+//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
+//                        }
+//                    });
+                }
+            }});
+        th.start();
     }
 
 //    public void setPhoneContactsIntoArrayList(){
@@ -173,19 +218,18 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
                         //и соответствующий ему номер:
                         while (phoneCursor.moveToNext()) {
                             phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
-                            phones.add(phoneNumber);
-                            GVAnswer item = new GVAnswer();
-                            item.setQuestionId(questionId);
-                            item.setToPhone(fromPhone);
-                            addItemInTableAnswer(item);
-//                            output.append("\n Телефон: " + phoneNumber);
+                            if (!hasElementTableAnswer(phoneNumber, questionId)) {
+                                phones.add(phoneNumber);
+                                GVAnswer item = new GVAnswer();
+                                item.setQuestionId(questionId);
+                                item.setToPhone(phoneNumber);
+                                addItemInTableAnswer(item);
+                            }
                         }
                     }
                     output.append("\n");
                 }
                 System.out.println("test");
-                //Полученные данные отображаем с созданном элементе TextView:
-//            contacts.setText(output);
             }
         }
         return phones;
@@ -206,7 +250,7 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
     /**
      * Mobile Service Table used to access data
      */
-    private MobileServiceTable<GVQuestion> mQuestionTable;
+    private MobileServiceTable<GVQuestionAnswer> mQuestionAnswerTable;
 
     /**
      * Mobile Service Table used to access data
@@ -217,9 +261,9 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
 //     */
 //    private GVQuestionAdapter mAdapter;
 
-    MobileServiceClient mClient;
+//    MobileServiceClient mClient;
 
-    private QuestionAdapter mAdapter;
+//    private QuestionAdapter mAdapter;
 
 //    public Questions() {
 //    }
@@ -243,7 +287,7 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
 
 
         // Offline Sync
-//        mQuestionTable = mClient.getSyncTable("GVQuestion", GVQuestion.class);
+//        mQuestionAnswerTable = mClient.getSyncTable("GVQuestion", GVQuestion.class);
 
         // Load the items from the Mobile Service
 
@@ -325,7 +369,7 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
 //     */
 //
 //    private List<GVQuestion> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
-//        return mQuestionTable.where().field("UserId").eq("89507355809").execute().get();
+//        return mQuestionAnswerTable.where().field("UserId").eq("89507355809").execute().get();
 //    }
 
     //Offline Sync
@@ -337,7 +381,7 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
 //        sync().get();
 //        Query query = QueryOperations.field("complete").
 //                eq(val(false));
-//        return mQuestionTable.read(query).get();
+//        return mQuestionAnswerTable.read(query).get();
 //    }
 
     /**
@@ -453,8 +497,8 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
      * @param item
      *            The item to Add
      */
-    public GVQuestion addItemInTable(GVQuestion item) throws ExecutionException, InterruptedException {
-        GVQuestion entity = mQuestionTable.insert(item).get();
+    public GVAnswer updateItemInTable(GVAnswer item) throws ExecutionException, InterruptedException {
+        GVAnswer entity = mAnswerTable.update(item).get();
         return entity;
     }
 
@@ -467,6 +511,17 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
     public GVAnswer addItemInTableAnswer(GVAnswer item) throws ExecutionException, InterruptedException {
         GVAnswer entity = mAnswerTable.insert(item).get();
         return entity;
+    }
+
+    /**
+     * Add an item to the Mobile Service Table
+     *
+     * @param phone
+     *            The item to Add
+     */
+    public Boolean hasElementTableAnswer(String phone, String questionId) throws ExecutionException, InterruptedException {
+        List<GVAnswer> elements = mAnswerTable.where().field("toPhone").eq(phone).and().field("questionId").eq(questionId).execute().get();
+        return elements.size() != 0;
     }
 
 }

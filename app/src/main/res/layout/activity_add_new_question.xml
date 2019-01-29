@@ -7,47 +7,87 @@
     tools:context=".questions.AddNewQuestionActivity"
     tools:layout_editor_absoluteY="81dp">
 
-    <EditText
-        android:id="@+id/question_text"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="14dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="434dp"
-        android:autofillHints="@string/action_questions"
-        android:ems="10"
-        android:hint="@string/action_questions"
-        android:inputType="textPersonName"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/question_label_text" />
-
     <TextView
-        android:id="@+id/question_label_text"
+        android:id="@+id/question_text_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="310dp"
-        android:layout_marginBottom="13dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="128dp"
+        android:layout_marginEnd="324dp"
+        android:layout_marginBottom="8dp"
         android:text="@string/title_question"
         app:layout_constraintBottom_toTopOf="@+id/question_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!--android:autofillHints="@string/action_questions"-->
+    <EditText
+        android:id="@+id/question_text"
+        android:layout_width="379dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="27dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        app:layout_constraintBottom_toTopOf="@+id/select_image"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/question_text_label"
+        android:autofillHints="" />
+
+    <!--<Button-->
+        <!--android:id="@+id/upload"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="48dp"-->
+        <!--android:layout_marginTop="24dp"-->
+        <!--android:layout_marginBottom="16dp"-->
+        <!--android:text="@string/button_upload_image"-->
+        <!--app:layout_constraintBottom_toTopOf="@+id/add_button"-->
+        <!--app:layout_constraintEnd_toEndOf="parent"-->
+        <!--app:layout_constraintStart_toStartOf="parent"-->
+        <!--app:layout_constraintTop_toBottomOf="@+id/question_text" />-->
+
+    <Button
+        android:id="@+id/select_image"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/button_select_image"
+        app:layout_constraintBottom_toTopOf="@+id/add_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/question_text" />
+
     <Button
         android:id="@+id/add_button"
-        android:layout_width="335dp"
-        android:layout_height="51dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_width="387dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="19dp"
         android:text="@string/button_add"
+        app:layout_constraintBottom_toTopOf="@+id/question_image_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/select_image" />
+
+    <ImageView
+        android:id="@+id/question_image_view"
+        android:layout_width="398dp"
+        android:layout_height="407dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="19dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="88dp"
+        android:contentDescription="@string/action_questions"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/add_button"
+        tools:srcCompat="@mipmap/ic_launcher_round" />
 </android.support.constraint.ConstraintLayout>

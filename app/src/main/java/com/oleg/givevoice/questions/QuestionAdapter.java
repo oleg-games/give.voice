@@ -5,7 +5,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.oleg.givevoice.R;
@@ -21,11 +20,6 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
 
     public QuestionAdapter(Context context) {
         this.questions = new ArrayList<>();
-        this.inflater = LayoutInflater.from(context);
-    }
-
-    public QuestionAdapter(Context context, List<GVQuestion> questions) {
-        this.questions= questions;
         this.inflater = LayoutInflater.from(context);
     }
 
@@ -47,9 +41,7 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
     @Override
     public void onBindViewHolder(QuestionAdapter.ViewHolder holder, int position) {
         GVQuestion question = questions.get(position);
-//        holder.imageView.setImageResource(questions.getImage());
         holder.questionTextView.setText(question.getText());
-//        holder.companyView.setText(questions.getCompany());
     }
 
     @Override
@@ -58,14 +50,10 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-//        final ImageView imageView;
-//        final TextView companyView;
         final TextView questionTextView ;
         ViewHolder(View view){
             super(view);
-//            imageView = (ImageView)view.findViewById(R.id.image);
-            questionTextView = (TextView) view.findViewById(R.id.question_text);
-//            companyView = (TextView) view.findViewById(R.id.company);
+            questionTextView = view.findViewById(R.id.question_text);
         }
     }
 }

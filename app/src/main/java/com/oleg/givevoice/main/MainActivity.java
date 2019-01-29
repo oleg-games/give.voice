@@ -44,8 +44,9 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        int pos = getIntent().getIntExtra("fragment", R.id.questions);
         //add this line to display menu1 when the activity is loaded
-        displaySelectedScreen(R.id.questions);
+        displaySelectedScreen(pos);
     }
 
     @Override
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         //calling the method displayselectedscreen and passing the id of selected menu
-        displaySelectedScreen(item.getItemId());
+            displaySelectedScreen(item.getItemId());
 
         //make this method blank
         return true;
