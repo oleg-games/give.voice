@@ -33,6 +33,7 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPublicAzureServiceAdapter;
 import com.oleg.givevoice.db.gvverificationuser.GVVerificationUser;
+import com.oleg.givevoice.utils.PhoneUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -179,7 +180,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 //        // Store values at the time of the login attempt.
 //        String email = mEmailView.getText().toString();
 //        String password = mPasswordView.getText().toString();
-        String phone = mPhoneView.getText().toString();
+        String phone = PhoneUtils.getPhoneNumber(mPhoneView.getText().toString());
 
         boolean cancel = false;
         View focusView = null;

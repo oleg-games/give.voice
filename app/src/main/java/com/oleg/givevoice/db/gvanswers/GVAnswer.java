@@ -30,6 +30,12 @@ public class GVAnswer {
     private String mToPhone;
 
     /**
+     * Item image
+     */
+    @com.google.gson.annotations.SerializedName("image")
+    private String mImage;
+
+    /**
      * GVQuestion constructor
      */
     public GVAnswer() {
@@ -141,5 +147,22 @@ public class GVAnswer {
     @Override
     public boolean equals(Object o) {
         return o instanceof GVAnswer && ((GVAnswer) o).mId == mId;
+    }
+
+    /**
+     * Returns the item id
+     */
+    public String getImage() {
+        return mImage;
+    }
+
+    /**
+     * Sets the item id
+     *
+     * @param image
+     *            id to set
+     */
+    public final void setImage(String image) {
+        mImage = image;
     }
 }

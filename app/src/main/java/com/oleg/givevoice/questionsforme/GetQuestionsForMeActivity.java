@@ -1,24 +1,26 @@
-package com.oleg.givevoice.questions;
+package com.oleg.givevoice.questionsforme;
 
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.os.Handler;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
@@ -27,72 +29,78 @@ import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvimage.ImageManager;
-import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
 import com.oleg.givevoice.main.MainActivity;
+import com.oleg.givevoice.utils.PhoneUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class AddNewQuestionActivity extends AppCompatActivity {
+public class GetQuestionsForMeActivity extends AppCompatActivity {
 
     String questionId;
     String fromPhone;
+    private Uri imageUri;
+    private static final int SELECT_IMAGE = 100;
+    private ImageView imageView;
+    private ImageView forAnswerImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_add_new_question);
+        setContentView(R.layout.activity_question_for_me);
+
+        final GVQuestionAnswer itemQA = (GVQuestionAnswer) getIntent().getSerializableExtra(GVQuestionAnswer.class.getSimpleName());
+
+        final TextView textView = (TextView) findViewById(R.id.question_text);
+        textView.setText(itemQA.getQuestion());
 
         GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
-        mQuestionTable = mClient.getTable(GVQuestion.class);
+        mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
         mAnswerTable = mClient.getTable(GVAnswer.class);
-        final Activity activity = this;
+//        final Activity activity = this;
         mActivity = this;
-        Button button = (Button) findViewById(R.id.add_button);
+////        Button button = (Button) findViewById(R.id.button);
+        Button button = findViewById(R.id.get_answer_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
-                final EditText edit = (EditText) findViewById(R.id.question_text);
-                final GVQuestion item = new GVQuestion();
+                final EditText answerEdit = (EditText) findViewById(R.id.getAnswerEditText);
+                final GVAnswer answer = itemQA.getAnswer();
+                answer.setText(answerEdit.getText().toString());
+                String imageName = uploadImage();
+                answer.setImage(imageName);
 
-                item.setText(edit.getText().toString());
-                SharedPreferences settings = PreferenceManager
-                        .getDefaultSharedPreferences(v.getContext());
-                final String fromPhone = settings.getString("phone", "");
-
-                if (fromPhone != null && !fromPhone.isEmpty()) {
-                    BigInteger fromPhoneInteger = new BigInteger(fromPhone);
-                    item.setUserId(fromPhoneInteger);
-
-                    // Insert the new item
-                    AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-                        @Override
-                        protected Void doInBackground(Void... params) {
-                            try {
-                                String imageName = uploadImage();
-                                item.setImage(imageName);
-                                GVQuestion question = addItemInTable(item);
-                                questionId = question.getId();
-                                setPhoneContacts();
-                                Intent intent = new Intent(activity, MainActivity.class);
-                                startActivity(intent);
-                            } catch (final Exception e) {
-                                createAndShowDialogFromTask(e, "Error");
-                            }
-                            return null;
+                // Insert the new item
+                AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        try {
+                            GVAnswer anwerToChange = updateItemInTable(answer);
+                            questionId = anwerToChange.getId();
+                            setPhoneContacts();
+                            Intent intent = new Intent(mActivity, MainActivity.class);
+                            intent.putExtra("fragment", R.id.questions_fo_me);
+                            startActivity(intent);
+                        } catch (final Exception e) {
+                            createAndShowDialogFromTask(e, "Error");
                         }
-                    };
+//                        return 1;
+                        return null;
+                    }
+                };
 
-                    runAsyncTask(task);
-                }
+                runAsyncTask(task);
             }
         });
 
-        Button selectImageButton = findViewById(R.id.select_image);
+        this.imageView = (ImageView)findViewById(R.id.question_for_me_image_view);
+        this.forAnswerImageView = (ImageView)findViewById(R.id.question_for_answer_image_view);
+
+        Button selectImageButton = findViewById(R.id.select_image_for_answer);
         selectImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -100,14 +108,96 @@ public class AddNewQuestionActivity extends AppCompatActivity {
             }
         });
 
-//        this.uploadImageButton = (Button) findViewById(R.id.upload);
-//        this.uploadImageButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                UploadImage();
-//            }
-//        });
-        this.imageView = findViewById(R.id.question_image_view);
+        final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+
+        final Handler handler = new Handler();
+
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+
+                try {
+
+                    long imageLength = 0;
+
+                    ImageManager.GetImage(itemQA.getQuestionImage(), imageStream, imageLength);
+
+                    handler.post(new Runnable() {
+
+                        public void run() {
+                            byte[] buffer = imageStream.toByteArray();
+
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+
+                            imageView.setImageBitmap(bitmap);
+                        }
+                    });
+                }
+                catch(Exception ex) {
+                    final String exceptionMessage = ex.getMessage();
+//                    handler.post(new Runnable() {
+//                        public void run() {
+//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
+//                        }
+//                    });
+                }
+            }});
+        th.start();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+
+        switch (requestCode) {
+            case SELECT_IMAGE:
+                if (resultCode == RESULT_OK) {
+                    this.imageUri = imageReturnedIntent.getData();
+                    this.forAnswerImageView.setImageURI(this.imageUri);
+//                    this.uploadImageButton.setEnabled(true);
+                }
+        }
+    }
+
+    private String uploadImage()
+    {
+        String imageName = null;
+        if (this.imageUri != null) {
+            try {
+
+                final InputStream imageStream = getContentResolver().openInputStream(this.imageUri);
+                final int imageLength = imageStream.available();
+
+//            final Handler handler = new Handler();
+
+//            Thread th = new Thread(new Runnable() {
+//                public void run() {
+
+//                    try {
+
+                imageName = ImageManager.UploadImage(imageStream, imageLength);
+//                        handler.post(new Runnable() {
+//
+//                            public void run() {
+//                                Toast.makeText(AddNewQuestionActivity.this, "Image Uploaded Successfully. Name = " + imageName, Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
+//                    }
+//                    catch(Exception ex) {
+//                        final String exceptionMessage = ex.getMessage();
+//                        handler.post(new Runnable() {
+//                            public void run() {
+//                                Toast.makeText(AddNewQuestionActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
+//                    }
+//                }});
+//            th.start();
+            } catch (Exception ex) {
+
+//            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+        return imageName;
     }
 
     private void SelectImageFromGallery()
@@ -154,8 +244,8 @@ public class AddNewQuestionActivity extends AppCompatActivity {
     }
 
     //Описываем метод:
-    public List<String> setPhoneContacts() throws ExecutionException, InterruptedException {
-        List<String> phones = new ArrayList<>();
+    public void setPhoneContacts() throws ExecutionException, InterruptedException {
+//        List<String> phones = new ArrayList<>();
 
         // Check the SDK version and whether the permission is already granted or not.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
@@ -203,22 +293,24 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                         //и соответствующий ему номер:
                         while (phoneCursor.moveToNext()) {
                             phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
-                            phones.add(phoneNumber);
-                            GVAnswer item = new GVAnswer();
-                            item.setQuestionId(questionId);
-                            item.setToPhone(phoneNumber);
-                            addItemInTableAnswer(item);
-//                            output.append("\n Телефон: " + phoneNumber);
+                            if (!hasElementTableAnswer(PhoneUtils.getPhoneNumber(phoneNumber), questionId)) {
+//                                phones.add(phoneNumber);
+                                GVAnswer item = new GVAnswer();
+                                item.setQuestionId(questionId);
+                                item.setToPhone(PhoneUtils.getPhoneNumber(phoneNumber));
+                                addItemInTableAnswer(item);
+                            }
                         }
                     }
                     output.append("\n");
                 }
                 System.out.println("test");
-                //Полученные данные отображаем с созданном элементе TextView:
-//            contacts.setText(output);
             }
         }
-        return phones;
+
+        Intent intent = new Intent(mActivity, MainActivity.class);
+        startActivity(intent);
+//        return phones;
     }
 
 
@@ -236,7 +328,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
     /**
      * Mobile Service Table used to access data
      */
-    private MobileServiceTable<GVQuestion> mQuestionTable;
+    private MobileServiceTable<GVQuestionAnswer> mQuestionAnswerTable;
 
     /**
      * Mobile Service Table used to access data
@@ -247,9 +339,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 //     */
 //    private GVQuestionAdapter mAdapter;
 
-    MobileServiceClient mClient;
+//    MobileServiceClient mClient;
 
-    private QuestionAdapter mAdapter;
+//    private QuestionAdapter mAdapter;
 
 //    public Questions() {
 //    }
@@ -273,7 +365,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 
 
         // Offline Sync
-//        mQuestionTable = mClient.getSyncTable("GVQuestion", GVQuestion.class);
+//        mQuestionAnswerTable = mClient.getSyncTable("GVQuestion", GVQuestion.class);
 
         // Load the items from the Mobile Service
 
@@ -355,7 +447,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 //     */
 //
 //    private List<GVQuestion> refreshItemsFromMobileServiceTable() throws ExecutionException, InterruptedException {
-//        return mQuestionTable.where().field("UserId").eq("89507355809").execute().get();
+//        return mQuestionAnswerTable.where().field("UserId").eq("89507355809").execute().get();
 //    }
 
     //Offline Sync
@@ -367,7 +459,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 //        sync().get();
 //        Query query = QueryOperations.field("complete").
 //                eq(val(false));
-//        return mQuestionTable.read(query).get();
+//        return mQuestionAnswerTable.read(query).get();
 //    }
 
     /**
@@ -483,8 +575,8 @@ public class AddNewQuestionActivity extends AppCompatActivity {
      * @param item
      *            The item to Add
      */
-    public GVQuestion addItemInTable(GVQuestion item) throws ExecutionException, InterruptedException {
-        GVQuestion entity = mQuestionTable.insert(item).get();
+    public GVAnswer updateItemInTable(GVAnswer item) throws ExecutionException, InterruptedException {
+        GVAnswer entity = mAnswerTable.update(item).get();
         return entity;
     }
 
@@ -499,64 +591,15 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         return entity;
     }
 
-    private Uri imageUri;
-    private static final int SELECT_IMAGE = 100;
-    private ImageView imageView;
-    private Button uploadImageButton;
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
-        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
-
-        switch (requestCode) {
-            case SELECT_IMAGE:
-                if (resultCode == RESULT_OK) {
-                    this.imageUri = imageReturnedIntent.getData();
-                    this.imageView.setImageURI(this.imageUri);
-//                    this.uploadImageButton.setEnabled(true);
-                }
-        }
+    /**
+     * Add an item to the Mobile Service Table
+     *
+     * @param phone
+     *            The item to Add
+     */
+    public Boolean hasElementTableAnswer(String phone, String questionId) throws ExecutionException, InterruptedException {
+        List<GVAnswer> elements = mAnswerTable.where().field("toPhone").eq(phone).and().field("questionId").eq(questionId).execute().get();
+        return elements.size() != 0;
     }
 
-    private String uploadImage()
-    {
-        String imageName = null;
-        if (this.imageUri != null) {
-            try {
-
-                final InputStream imageStream = getContentResolver().openInputStream(this.imageUri);
-                final int imageLength = imageStream.available();
-
-//            final Handler handler = new Handler();
-
-//            Thread th = new Thread(new Runnable() {
-//                public void run() {
-
-//                    try {
-
-                imageName = ImageManager.UploadImage(imageStream, imageLength);
-//                        handler.post(new Runnable() {
-//
-//                            public void run() {
-//                                Toast.makeText(AddNewQuestionActivity.this, "Image Uploaded Successfully. Name = " + imageName, Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
-//                    }
-//                    catch(Exception ex) {
-//                        final String exceptionMessage = ex.getMessage();
-//                        handler.post(new Runnable() {
-//                            public void run() {
-//                                Toast.makeText(AddNewQuestionActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
-//                    }
-//                }});
-//            th.start();
-            } catch (Exception ex) {
-
-//            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        }
-        return imageName;
-    }
 }

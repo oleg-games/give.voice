@@ -1,4 +1,4 @@
-package com.oleg.givevoice.questionsanswers;
+package com.oleg.givevoice.answersforme;
 
 import android.Manifest;
 import android.app.Activity;
@@ -31,24 +31,25 @@ import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
 import com.oleg.givevoice.main.MainActivity;
+import com.oleg.givevoice.utils.PhoneUtils;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class GetQuestionAnswerActivity extends AppCompatActivity {
+public class AnswerForMeActivity extends AppCompatActivity {
 
     String questionId;
     String fromPhone;
     private Uri imageUri;
     private static final int SELECT_IMAGE = 100;
     private ImageView imageView;
+    private ImageView forAnswerImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_get_question_answer);
+        setContentView(R.layout.activity_answer_for_me);
 
         final GVQuestionAnswer itemQA = (GVQuestionAnswer) getIntent().getSerializableExtra(GVQuestionAnswer.class.getSimpleName());
 
@@ -81,7 +82,7 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
                             questionId = anwerToChange.getId();
                             setPhoneContacts();
                             Intent intent = new Intent(mActivity, MainActivity.class);
-                            intent.putExtra("fragment", R.id.questions_answers);
+                            intent.putExtra("fragment", R.id.my_answers);
                             startActivity(intent);
                         } catch (final Exception e) {
                             createAndShowDialogFromTask(e, "Error");
@@ -95,7 +96,16 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
             }
         });
 
-        this.imageView = (ImageView)findViewById(R.id.question_answer_image_view);
+        this.imageView = (ImageView)findViewById(R.id.question_for_me_image_view);
+        this.forAnswerImageView = (ImageView)findViewById(R.id.question_for_answer_image_view);
+
+        Button selectImageButton = findViewById(R.id.select_image_for_answer);
+        selectImageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SelectImageFromGallery();
+            }
+        });
 
         final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
 
@@ -131,6 +141,28 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
                 }
             }});
         th.start();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+
+        switch (requestCode) {
+            case SELECT_IMAGE:
+                if (resultCode == RESULT_OK) {
+                    this.imageUri = imageReturnedIntent.getData();
+                    this.forAnswerImageView.setImageURI(this.imageUri);
+//                    this.uploadImageButton.setEnabled(true);
+                }
+        }
+    }
+
+    private void SelectImageFromGallery()
+    {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_IMAGE);
     }
 
 //    public void setPhoneContactsIntoArrayList(){
@@ -169,8 +201,8 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
     }
 
     //Описываем метод:
-    public List<String> setPhoneContacts() throws ExecutionException, InterruptedException {
-        List<String> phones = new ArrayList<>();
+    public void setPhoneContacts() throws ExecutionException, InterruptedException {
+//        List<String> phones = new ArrayList<>();
 
         // Check the SDK version and whether the permission is already granted or not.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
@@ -218,11 +250,11 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
                         //и соответствующий ему номер:
                         while (phoneCursor.moveToNext()) {
                             phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
-                            if (!hasElementTableAnswer(phoneNumber, questionId)) {
-                                phones.add(phoneNumber);
+                            if (!hasElementTableAnswer(PhoneUtils.getPhoneNumber(phoneNumber), questionId)) {
+//                                phones.add(phoneNumber);
                                 GVAnswer item = new GVAnswer();
                                 item.setQuestionId(questionId);
-                                item.setToPhone(phoneNumber);
+                                item.setToPhone(PhoneUtils.getPhoneNumber(phoneNumber));
                                 addItemInTableAnswer(item);
                             }
                         }
@@ -232,7 +264,10 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
                 System.out.println("test");
             }
         }
-        return phones;
+
+        Intent intent = new Intent(mActivity, MainActivity.class);
+        startActivity(intent);
+//        return phones;
     }
 
 
@@ -286,10 +321,10 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
 
 
 
-        // Offline Sync
+    // Offline Sync
 //        mQuestionAnswerTable = mClient.getSyncTable("GVQuestion", GVQuestion.class);
 
-        // Load the items from the Mobile Service
+    // Load the items from the Mobile Service
 
 
 //        setInitialData();
@@ -523,5 +558,4 @@ public class GetQuestionAnswerActivity extends AppCompatActivity {
         List<GVAnswer> elements = mAnswerTable.where().field("toPhone").eq(phone).and().field("questionId").eq(questionId).execute().get();
         return elements.size() != 0;
     }
-
 }

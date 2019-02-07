@@ -1,4 +1,4 @@
-package com.oleg.givevoice.questions;
+package com.oleg.givevoice.myquestions;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -34,7 +34,7 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
     @Override
     public QuestionAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-        View view = inflater.inflate(R.layout.questions_item, parent, false);
+        View view = inflater.inflate(R.layout.my_questions_item, parent, false);
         return new ViewHolder(view);
     }
 

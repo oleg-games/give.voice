@@ -53,6 +53,12 @@ public class GVQuestionAnswer implements Serializable {
     private String mFromPhone;
 
     /**
+     * Item image
+     */
+    @com.google.gson.annotations.SerializedName("image")
+    private String mImage;
+
+    /**
      * GVQuestion constructor
      */
     public GVQuestionAnswer() {
@@ -152,6 +158,23 @@ public class GVQuestionAnswer implements Serializable {
      */
     public final void setFromPhone(String phone) {
         mFromPhone= phone;
+    }
+
+    /**
+     * Returns the item id
+     */
+    public String getImage() {
+        return mImage;
+    }
+
+    /**
+     * Sets the item id
+     *
+     * @param image
+     *            id to set
+     */
+    public final void setImage(String image) {
+        mImage = image;
     }
 
     /**

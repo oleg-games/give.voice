@@ -1,4 +1,4 @@
-package com.oleg.givevoice.questionsanswers;
+package com.oleg.givevoice.questionsforme;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;

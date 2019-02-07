@@ -1,4 +1,4 @@
-package com.oleg.givevoice.questions;
+package com.oleg.givevoice.answersforme;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -20,7 +19,10 @@ import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
-import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
+import com.oleg.givevoice.questionsforme.GetQuestionsForMeActivity;
+import com.oleg.givevoice.questionsforme.QuestionsForMeAdapter;
+import com.oleg.givevoice.questionsforme.RecyclerItemClickListener;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -30,17 +32,17 @@ import java.util.concurrent.ExecutionException;
  */
 
 
-public class Questions extends Fragment {
+public class AnswersForMe extends Fragment {
 
     private Activity mActivity;
 
     /**
      * Mobile Service Table used to access data
      */
-    private MobileServiceTable<GVQuestion> mQuestionTable;
-    private QuestionAdapter mAdapter;
+    private MobileServiceTable<GVQuestionAnswer> mQuestionAnswerTable;
+    private QuestionsForMeAdapter mAdapter;
 
-    public Questions() {
+    public AnswersForMe() {
     }
 
     @Nullable
@@ -48,39 +50,44 @@ public class Questions extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         //returning our layout file
         //change R.layout.yourlayoutfilename for each of your fragments
-        return inflater.inflate(R.layout.fragment_questions_layout, container, false);
+        return inflater.inflate(R.layout.fragment_answers_for_me_layout, container, false);
     }
-
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mActivity = getActivity();
         //you can set the title for your toolbar here for different fragments different titles
-        getActivity().setTitle("Questions");
+        getActivity().setTitle(R.string.action_answers_for_me);
 
-        GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
-        MobileServiceClient mClient = servicemAdapter.getClient();
-        mQuestionTable = mClient.getTable(GVQuestion.class);
+        GVPrivateAzureServiceAdapter serviceAdapter = GVPrivateAzureServiceAdapter.getInstance();
+        MobileServiceClient mClient = serviceAdapter.getClient();
+        mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
 
-        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_list);
+        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_answers_list);
         // создаем адаптер
-        mAdapter = new QuestionAdapter(getView().getContext());
+        mAdapter = new QuestionsForMeAdapter(getView().getContext());
         refreshItemsFromTable();
 
         // устанавливаем для списка адаптер
         recyclerView.setAdapter(mAdapter);
 
-        FloatingActionButton fab = (FloatingActionButton) getView().findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), AddNewQuestionActivity.class);
-                startActivity(intent);
-            }
-        });
+        recyclerView.addOnItemTouchListener(
+                new RecyclerItemClickListener(getContext(), recyclerView ,new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override public void onItemClick(View view, int position) {
+                        // do whatever
+                        GVQuestionAnswer item = mAdapter.get(position);
+                        Intent intent = new Intent(mActivity, GetQuestionsForMeActivity.class);
+                        intent.putExtra(GVQuestionAnswer.class.getSimpleName(), item);
+                        startActivity(intent);
+                    }
 
-
+                    @Override public void onLongItemClick(View view, int position) {
+                        // do whatever
+                        System.out.println("teat2");
+                    }
+                })
+        );
     }
 
     /**
@@ -94,20 +101,19 @@ public class Questions extends Fragment {
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
             @Override
             protected Void doInBackground(Void... params) {
-
                 SharedPreferences settings = PreferenceManager
                         .getDefaultSharedPreferences(getContext());
-                final String fromPhone = settings.getString("phone", "");
-                if (fromPhone != null && !fromPhone.isEmpty()) {
+                final String phoneNumber = settings.getString("phone", "");
+                if (phoneNumber != null && !phoneNumber.isEmpty()) {
                     try {
-                        final List<GVQuestion> results = refreshItemsFromMobileServiceTable(fromPhone);
+                        final List<GVQuestionAnswer> results = refreshItemsFromMobileServiceTable(phoneNumber);
 
                         mActivity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 mAdapter.clear();
 
-                                for (GVQuestion item : results) {
+                                for (GVQuestionAnswer item : results) {
                                     mAdapter.add(item);
                                 }
                                 mAdapter.notifyDataSetChanged();
@@ -131,8 +137,8 @@ public class Questions extends Fragment {
      * Refresh the list with the items in the Mobile Service Table
      */
 
-    private List<GVQuestion> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
-        return mQuestionTable.where().field("UserId").eq(phoneNumber).execute().get();
+    private List<GVQuestionAnswer> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
+        return mQuestionAnswerTable.where().field("fromPhone").eq(phoneNumber).and().field("text").ne("").execute().get();
     }
 
     /**

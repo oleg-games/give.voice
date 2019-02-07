@@ -13,10 +13,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.oleg.givevoice.R;
-import com.oleg.givevoice.answers.Answers;
+import com.oleg.givevoice.answersforme.AnswersForMe;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
-import com.oleg.givevoice.questions.Questions;
-import com.oleg.givevoice.questionsanswers.QuestionsAnswers;
+import com.oleg.givevoice.myanswers.MyAnswers;
+import com.oleg.givevoice.myquestions.MyQuestions;
+import com.oleg.givevoice.questionsforme.QuestionsForMe;
 import com.oleg.givevoice.settings.Settings;
 
 public class MainActivity extends AppCompatActivity
@@ -99,14 +100,20 @@ public class MainActivity extends AppCompatActivity
         //initializing the fragment object which is selected
         switch (itemId) {
             case R.id.questions:
-                fragment = new Questions();
+                fragment = new MyQuestions();
                 break;
-            case R.id.answers:
-                fragment = new Answers();
+            case R.id.questions_fo_me:
+                fragment = new QuestionsForMe();
                 break;
-            case R.id.questions_answers:
-                fragment = new QuestionsAnswers();
+            case R.id.my_answers:
+                fragment = new MyAnswers();
                 break;
+            case R.id.answers_for_me:
+                fragment = new AnswersForMe();
+                break;
+//            case R.id.answers:
+//                fragment = new Answers();
+//                break;
             case R.id.settings:
                 fragment = new Settings();
                 break;

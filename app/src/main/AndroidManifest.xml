@@ -41,7 +41,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".questions.AddNewQuestionActivity"
+            android:name=".myquestions.AddNewQuestionActivity"
             android:parentActivityName=".main.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -54,7 +54,7 @@
                 android:value=".main.MainActivity" />
         </activity>
         <activity
-            android:name=".questionsanswers.GetQuestionAnswerActivity"
+            android:name=".questionsforme.GetQuestionsForMeActivity"
             android:parentActivityName=".main.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

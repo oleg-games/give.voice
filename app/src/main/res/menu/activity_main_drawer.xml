@@ -7,15 +7,23 @@
         <item
             android:id="@+id/questions"
             android:icon="@drawable/ic_menu_camera"
-            android:title="Questions" />
+            android:title="@string/action_my_questions" />
         <item
-            android:id="@+id/questions_answers"
+            android:id="@+id/questions_fo_me"
             android:icon="@drawable/ic_menu_slideshow"
-            android:title="Questions Answers" />
+            android:title="@string/action_questions_for_me" />
         <item
-            android:id="@+id/answers"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Answers" />
+            android:id="@+id/my_answers"
+            android:icon="@drawable/ic_menu_slideshow"
+            android:title="@string/action_my_answers" />
+        <item
+            android:id="@+id/answers_for_me"
+            android:icon="@drawable/ic_menu_slideshow"
+            android:title="@string/action_answers_for_me" />
+        <!--<item-->
+            <!--android:id="@+id/answers"-->
+            <!--android:icon="@drawable/ic_menu_gallery"-->
+            <!--android:title="@string/action_answers" />-->
         <!--<item-->
             <!--android:id="@+id/slideshow"-->
             <!--android:icon="@drawable/ic_menu_slideshow"-->
