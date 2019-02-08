@@ -11,6 +11,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.answersforme.AnswersForMe;
@@ -22,6 +24,9 @@ import com.oleg.givevoice.settings.Settings;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    TextView tvTitle;
+    ProgressBar myProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
