@@ -1,6 +1,9 @@
 package com.oleg.givevoice.myquestions;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
@@ -15,7 +18,6 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -25,7 +27,6 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.MobileServiceException;
 import com.microsoft.windowsazure.mobileservices.http.HttpConstants;
@@ -46,15 +47,14 @@ import java.util.concurrent.ExecutionException;
 
 public class AddNewQuestionActivity extends AppCompatActivity {
 
-    String questionId;
-    String fromPhone;
     private Uri imageUri;
     private static final int SELECT_IMAGE = 100;
     private ImageView imageView;
-    private Button uploadImageButton;
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
     private Activity mActivity;
 
+    private View mProgressView;
+    private View mAddQuestionFormView;
     /**
      * Mobile Service Table used to access data
      */
@@ -66,6 +66,12 @@ public class AddNewQuestionActivity extends AppCompatActivity {
     private MobileServiceTable<GVAnswer> mAnswerTable;
 
     final GVQuestion item = new GVQuestion();
+
+    /**
+     * Keep track of the login task to ensure we can cancel it if requested.
+     */
+    private UserLoginTask mAuthTask = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,34 +89,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
-                final EditText edit = (EditText) findViewById(R.id.question_text);
-
-                item.setText(edit.getText().toString());
-                SharedPreferences settings = PreferenceManager
-                        .getDefaultSharedPreferences(v.getContext());
-                final String fromPhone = settings.getString("phone", "");
-
-                if (fromPhone != null && !fromPhone.isEmpty()) {
-                    BigInteger fromPhoneInteger = new BigInteger(fromPhone);
-                    item.setUserId(fromPhoneInteger);
-
-                    // Insert the new item
-                    AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-                        @Override
-                        protected Void doInBackground(Void... params) {
-                            try {
-                                String imageName = uploadImage();
-                                item.setImage(imageName);
-                                setPhoneContacts();
-                            } catch (final Exception e) {
-                                createAndShowDialogFromTask(e, "Error");
-                            }
-                            return null;
-                        }
-                    };
-
-                    runAsyncTask(task);
-                }
+                addQuestion();
             }
         });
 
@@ -123,6 +102,26 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         });
 
         this.imageView = findViewById(R.id.question_image_view);
+        mAddQuestionFormView = findViewById(R.id.add_question_form);
+        mProgressView = findViewById(R.id.add_progress);
+    }
+
+    private void addQuestion() {
+        final EditText edit = (EditText) findViewById(R.id.question_text);
+
+        item.setText(edit.getText().toString());
+        SharedPreferences settings = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        final String fromPhone = settings.getString("phone", "");
+
+        if (fromPhone != null && !fromPhone.isEmpty()) {
+            BigInteger fromPhoneInteger = new BigInteger(fromPhone);
+            item.setUserId(fromPhoneInteger);
+
+
+            mAuthTask = new UserLoginTask();
+            mAuthTask.execute((Void) null);
+        }
     }
 
     private void SelectImageFromGallery()
@@ -194,10 +193,14 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                             phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
                             phones.add(PhoneUtils.getPhoneNumber(phoneNumber));
                         }
+
+                        phoneCursor.close();
                     }
                     output.append("\n");
                 }
             }
+
+            cursor.close();
 
             // foreach
             // Basic loop
@@ -208,6 +211,42 @@ public class AddNewQuestionActivity extends AppCompatActivity {
             testInvokeNullResponseObject(content);
             Intent intent = new Intent(mActivity, MainActivity.class);
             startActivity(intent);
+        }
+    }
+
+    /**
+     * Shows the progress UI and hides the login form.
+     */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+    private void showProgress(final boolean show) {
+        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
+        // for very easy animations. If available, use these APIs to fade-in
+        // the progress spinner.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+            mAddQuestionFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mAddQuestionFormView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mAddQuestionFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+                }
+            });
+
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mProgressView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+        } else {
+            // The ViewPropertyAnimator APIs are not available, so simply show
+            // and hide the relevant UI components.
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mAddQuestionFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
 
@@ -353,4 +392,58 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         }
         return imageName;
     }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
+
+        UserLoginTask() {}
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+
+            try {
+                // Simulate network access.
+                String imageName = uploadImage();
+                item.setImage(imageName);
+                setPhoneContacts();
+            } catch (InterruptedException e) {
+                return false;
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            // TODO: register the new account here.
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            mAuthTask = null;
+            showProgress(false);
+
+            if (success) {
+                finish();
+            } else {
+//                mPasswordView.setError(getString(R.string.error_incorrect_password));
+//                mPasswordView.requestFocus();
+            }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            showProgress(true);
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask = null;
+            showProgress(false);
+        }
+    }
+
 }
