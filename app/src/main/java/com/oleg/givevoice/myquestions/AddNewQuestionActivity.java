@@ -1,22 +1,16 @@
 package com.oleg.givevoice.myquestions;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -24,12 +18,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
-import com.microsoft.windowsazure.mobileservices.MobileServiceException;
-import com.microsoft.windowsazure.mobileservices.http.HttpConstants;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
@@ -37,12 +26,11 @@ import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
 import com.oleg.givevoice.main.MainActivity;
+import com.oleg.givevoice.utils.ActivityUtils;
 import com.oleg.givevoice.utils.PhoneUtils;
 
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class AddNewQuestionActivity extends AppCompatActivity {
@@ -70,7 +58,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private UserLoginTask mAuthTask = null;
+    private AddQuestionTask mAuthTask = null;
 
 
     @Override
@@ -82,7 +70,6 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionTable = mClient.getTable(GVQuestion.class);
         mAnswerTable = mClient.getTable(GVAnswer.class);
-        final Activity activity = this;
         mActivity = this;
 
         Button button = (Button) findViewById(R.id.add_button);
@@ -118,9 +105,14 @@ public class AddNewQuestionActivity extends AppCompatActivity {
             BigInteger fromPhoneInteger = new BigInteger(fromPhone);
             item.setUserId(fromPhoneInteger);
 
-
-            mAuthTask = new UserLoginTask();
-            mAuthTask.execute((Void) null);
+            mAuthTask = new AddQuestionTask();
+            // Check the SDK version and whether the permission is already granted or not.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+                //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+            } else {
+                mAuthTask.execute((Void) null);
+            }
         }
     }
 
@@ -138,142 +130,11 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission is granted
-                try {
-                    setPhoneContacts();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                mAuthTask.execute((Void) null);
             } else {
                 Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-
-    //Описываем метод:
-    public void setPhoneContacts() throws ExecutionException, InterruptedException {
-        // Check the SDK version and whether the permission is already granted or not.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
-            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
-        } else {
-            // Android version is lesser than 6.0 or the permission is already granted.
-            String phoneNumber;
-            List<String> phones = new ArrayList<String>();
-
-            //Связываемся с контактными данными и берем с них значения id контакта, имени контакта и его номера:
-            Uri CONTENT_URI = ContactsContract.Contacts.CONTENT_URI;
-            String _ID = ContactsContract.Contacts._ID;
-            String HAS_PHONE_NUMBER = ContactsContract.Contacts.HAS_PHONE_NUMBER;
-
-            Uri PhoneCONTENT_URI = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
-            String Phone_CONTACT_ID = ContactsContract.CommonDataKinds.Phone.CONTACT_ID;
-            String NUMBER = ContactsContract.CommonDataKinds.Phone.NUMBER;
-
-
-            StringBuffer output = new StringBuffer();
-            ContentResolver contentResolver = getContentResolver();
-            Cursor cursor = contentResolver.query(CONTENT_URI, null, null, null, null);
-            //Запускаем цикл обработчик для каждого контакта:
-            if (cursor.getCount() > 0) {
-                //Если значение имени и номера контакта больше 0 (то есть они существуют) выбираем
-                //их значения в приложение привязываем с соответствующие поля "Имя" и "Номер":
-                while (cursor.moveToNext()) {
-                    String contact_id = cursor.getString(cursor.getColumnIndex(_ID));
-                    int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex(HAS_PHONE_NUMBER)));
-
-                    //Получаем имя:
-                    if (hasPhoneNumber > 0) {
-                        Cursor phoneCursor = contentResolver.query(PhoneCONTENT_URI, null,
-                                Phone_CONTACT_ID + " = ?", new String[]{contact_id}, null);
-
-                        //и соответствующий ему номер:
-                        while (phoneCursor.moveToNext()) {
-                            phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
-                            phones.add(PhoneUtils.getPhoneNumber(phoneNumber));
-                        }
-
-                        phoneCursor.close();
-                    }
-                    output.append("\n");
-                }
-            }
-
-            cursor.close();
-
-            // foreach
-            // Basic loop
-            JsonObject content = new JsonObject();
-            GVQuestion qv = mQuestionTable.insert(item).get();
-            content.add("phones", new Gson().toJsonTree(phones));
-            content.add("questionId", new Gson().toJsonTree(qv.getId()));
-            testInvokeNullResponseObject(content);
-            Intent intent = new Intent(mActivity, MainActivity.class);
-            startActivity(intent);
-        }
-    }
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mAddQuestionFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mAddQuestionFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mAddQuestionFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mAddQuestionFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
-    }
-
-    public void testInvokeNullResponseObject(JsonObject content) {
-
-        try {
-
-            GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
-            MobileServiceClient mClient = servicemAdapter.getClient();
-
-
-//            MobileServiceClient client = new MobileServiceClient(appUrl, getInstrumentation().getTargetContext());
-//            client = client.withFilter(new NullResponseFilter());
-
-            JsonElement response = mClient.invokeApi("answers", content, HttpConstants.PutMethod, null).get();
-            System.out.print("response" + response);
-        } catch (Exception exception) {
-            if (!(exception.getCause() instanceof MobileServiceException)) {
-                System.out.println("test");
-//                fail(exception.getMessage());
-            }
-
-            return;
-        }
-
-//        fail("Exception expected");
-
     }
 
     /**
@@ -397,9 +258,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
+    public class AddQuestionTask extends AsyncTask<Void, Void, Boolean> {
 
-        UserLoginTask() {}
+        AddQuestionTask() {}
 
         @Override
         protected Boolean doInBackground(Void... params) {
@@ -409,7 +270,10 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                 // Simulate network access.
                 String imageName = uploadImage();
                 item.setImage(imageName);
-                setPhoneContacts();
+                GVQuestion qv = mQuestionTable.insert(item).get();
+                PhoneUtils.setPhoneContacts(qv.getId(), getContentResolver());
+                Intent intent = new Intent(mActivity, MainActivity.class);
+                startActivity(intent);
             } catch (InterruptedException e) {
                 return false;
             } catch (ExecutionException e) {
@@ -423,7 +287,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
-            showProgress(false);
+            ActivityUtils.showProgress(false, mAddQuestionFormView, mProgressView, getResources());
 
             if (success) {
                 finish();
@@ -436,13 +300,13 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            showProgress(true);
+            ActivityUtils.showProgress(true, mAddQuestionFormView, mProgressView, getResources());
         }
 
         @Override
         protected void onCancelled() {
             mAuthTask = null;
-            showProgress(false);
+            ActivityUtils.showProgress(false, mAddQuestionFormView, mProgressView, getResources());
         }
     }
 

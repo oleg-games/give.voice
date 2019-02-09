@@ -61,7 +61,11 @@ public class ImageManager {
     public static String UploadImage(InputStream image, int imageLength) throws Exception {
         CloudBlobContainer container = getContainer();
 
-        container.createIfNotExists();
+        try {
+            container.createIfNotExists();
+        } catch (Error err) {
+            System.out.print(err);
+        }
 
         String imageName = randomString(10);
 

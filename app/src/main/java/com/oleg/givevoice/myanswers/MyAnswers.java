@@ -20,8 +20,6 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
-import com.oleg.givevoice.questionsforme.GetQuestionsForMeActivity;
-import com.oleg.givevoice.questionsforme.QuestionsForMeAdapter;
 import com.oleg.givevoice.questionsforme.RecyclerItemClickListener;
 
 import java.util.List;
@@ -40,7 +38,7 @@ public class MyAnswers extends Fragment {
      * Mobile Service Table used to access data
      */
     private MobileServiceTable<GVQuestionAnswer> mQuestionAnswerTable;
-    private QuestionsForMeAdapter mAdapter;
+    private MyAnswersAdapter mAdapter;
 
     public MyAnswers() {
     }
@@ -66,7 +64,7 @@ public class MyAnswers extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_answers_list);
         // создаем адаптер
-        mAdapter = new QuestionsForMeAdapter(getView().getContext());
+        mAdapter = new MyAnswersAdapter(getView().getContext());
         refreshItemsFromTable();
 
         // устанавливаем для списка адаптер
@@ -77,7 +75,7 @@ public class MyAnswers extends Fragment {
                     @Override public void onItemClick(View view, int position) {
                         // do whatever
                         GVQuestionAnswer item = mAdapter.get(position);
-                        Intent intent = new Intent(mActivity, GetQuestionsForMeActivity.class);
+                        Intent intent = new Intent(mActivity, MyAnswerActivity.class);
                         intent.putExtra(GVQuestionAnswer.class.getSimpleName(), item);
                         startActivity(intent);
                     }
