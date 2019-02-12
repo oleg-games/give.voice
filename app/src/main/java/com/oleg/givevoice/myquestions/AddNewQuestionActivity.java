@@ -16,7 +16,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
@@ -132,21 +131,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                 // Permission is granted
                 mAuthTask.execute((Void) null);
             } else {
-                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
+                System.out.println("test");
+//                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
             }
-        }
-    }
-
-    /**
-     * Run an ASync task on the corresponding executor
-     * @param task
-     * @return
-     */
-    private AsyncTask<Void, Void, Void> runAsyncTask(AsyncTask<Void, Void, Void> task) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            return task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        } else {
-            return task.execute();
         }
     }
 
@@ -245,7 +232,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                 final int imageLength = imageStream.available();
 
                 imageName = ImageManager.UploadImage(imageStream, imageLength);
-                Toast.makeText(this, "Text", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "Text", Toast.LENGTH_SHORT).show();
             } catch (Exception ex) {
 
 //            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
