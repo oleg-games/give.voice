@@ -3,27 +3,37 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="16dp">
-    <!--<ImageView-->
-        <!--android:id="@+id/image"-->
-        <!--android:layout_marginRight="16dp"-->
-        <!--android:layout_marginEnd="16dp"-->
-        <!--android:layout_width="100dp"-->
-        <!--android:layout_height="100dp" />-->
+
+    <ImageView
+        android:id="@+id/question_image_view"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:background="@drawable/ic_launcher_background"
+        android:contentDescription="@string/title_question_description_image" />
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="99dp"
+        android:orientation="vertical">
 
-        <!--<TextView-->
-            <!--android:id="@+id/name"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"  />-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:gravity="top"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/question_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"  />
+            <TextView
+                android:id="@+id/question_label_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_question" />
 
+            <TextView
+                android:id="@+id/question_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

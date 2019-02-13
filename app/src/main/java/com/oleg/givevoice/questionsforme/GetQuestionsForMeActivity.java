@@ -101,9 +101,7 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
         });
 
         final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
-
         final Handler handler = new Handler();
-
         Thread th = new Thread(new Runnable() {
             public void run() {
 

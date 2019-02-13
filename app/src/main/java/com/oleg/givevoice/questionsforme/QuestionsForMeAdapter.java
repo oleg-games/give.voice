@@ -29,11 +29,6 @@ public class QuestionsForMeAdapter extends RecyclerView.Adapter<QuestionsForMeAd
         this.inflater = LayoutInflater.from(context);
     }
 
-    public QuestionsForMeAdapter(Context context, List<GVQuestionAnswer> questionsForMe) {
-        this.questionsForMe= questionsForMe;
-        this.inflater = LayoutInflater.from(context);
-    }
-
     public void add(GVQuestionAnswer qa) {
         questionsForMe.add(qa);
     }
@@ -56,8 +51,8 @@ public class QuestionsForMeAdapter extends RecyclerView.Adapter<QuestionsForMeAd
     @Override
     public void onBindViewHolder(final QuestionsForMeAdapter.ViewHolder holder, int position) {
         final GVQuestionAnswer questionForMe = questionsForMe.get(position);
-        holder.questionTextView.setText(questionForMe .getQuestion());
-        holder.questionFromTextView.setText(questionForMe .getFromPhone());
+        holder.questionTextView.setText(questionForMe.getQuestion());
+        holder.questionFromTextView.setText(questionForMe.getFromPhone());
 
         final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
 
@@ -70,7 +65,7 @@ public class QuestionsForMeAdapter extends RecyclerView.Adapter<QuestionsForMeAd
 
                     long imageLength = 0;
 
-                    ImageManager.GetImage(questionForMe .getQuestionImage(), imageStream, imageLength);
+                    ImageManager.GetImage(questionForMe.getQuestionImage(), imageStream, imageLength);
 
                     handler.post(new Runnable() {
 

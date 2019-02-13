@@ -308,7 +308,7 @@ public class AnswerForMeActivity extends AppCompatActivity {
 //    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 //        //returning our layout file
 //        //change R.layout.yourlayoutfilename for each of your fragments
-//        return inflater.inflate(R.layout.fragment_questions_layout, container, false);
+//        return inflater.inflate(R.layout.fragment_my_questions_layout, container, false);
 //    }
 
 

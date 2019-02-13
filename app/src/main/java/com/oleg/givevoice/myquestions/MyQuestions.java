@@ -21,6 +21,8 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.questionsforme.RecyclerItemClickListener;
+import com.oleg.givevoice.utils.ActivityUtils;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +42,15 @@ public class MyQuestions extends Fragment {
     private MobileServiceTable<GVQuestion> mQuestionTable;
     private QuestionAdapter mAdapter;
 
+    private View mProgressView;
+    private View mMyQuestionsFormView;
+    private View mFab;
+
+    /**
+     * Keep track of the login task to ensure we can cancel it if requested.
+     */
+    private MyQuestionsTask mAuthTask = null;
+
     public MyQuestions() {
     }
 
@@ -48,7 +59,7 @@ public class MyQuestions extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         //returning our layout file
         //change R.layout.yourlayoutfilename for each of your fragments
-        return inflater.inflate(R.layout.fragment_questions_layout, container, false);
+        return inflater.inflate(R.layout.fragment_my_questions_layout, container, false);
     }
 
 
@@ -63,15 +74,35 @@ public class MyQuestions extends Fragment {
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionTable = mClient.getTable(GVQuestion.class);
 
-        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_list);
+        mMyQuestionsFormView = getView().findViewById(R.id.question_form);
+        mProgressView = getView().findViewById(R.id.my_questions_progress);
+        mFab = getView().findViewById(R.id.fab);
+        // устанавливаем для списка адаптер
+        RecyclerView recyclerView = getView().findViewById(R.id.questions_list);
         // создаем адаптер
         mAdapter = new QuestionAdapter(getView().getContext());
         refreshItemsFromTable();
 
-        // устанавливаем для списка адаптер
         recyclerView.setAdapter(mAdapter);
 
-        FloatingActionButton fab = (FloatingActionButton) getView().findViewById(R.id.fab);
+        recyclerView.addOnItemTouchListener(
+                new RecyclerItemClickListener(getContext(), recyclerView ,new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override public void onItemClick(View view, int position) {
+                        // do whatever
+                        GVQuestion item = mAdapter.get(position);
+                        Intent intent = new Intent(mActivity, AddNewQuestionActivity.class);
+                        intent.putExtra(GVQuestion.class.getSimpleName(), item);
+                        startActivity(intent);
+                    }
+
+                    @Override public void onLongItemClick(View view, int position) {
+                        // do whatever
+                        System.out.println("teat2");
+                    }
+                })
+        );
+
+        FloatingActionButton fab = getView().findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -90,41 +121,44 @@ public class MyQuestions extends Fragment {
 
         // Get the items that weren't marked as completed and add them in the
         // mAdapter
+        mAuthTask = new MyQuestionsTask();
+        // Check the SDK version and whether the permission is already granted or not.
+        mAuthTask.execute((Void) null);
 
-        AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-            @Override
-            protected Void doInBackground(Void... params) {
-
-                SharedPreferences settings = PreferenceManager
-                        .getDefaultSharedPreferences(getContext());
-                final String fromPhone = settings.getString("phone", "");
-                if (fromPhone != null && !fromPhone.isEmpty()) {
-                    try {
-                        final List<GVQuestion> results = refreshItemsFromMobileServiceTable(fromPhone);
-
-                        mActivity.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mAdapter.clear();
-
-                                for (GVQuestion item : results) {
-                                    mAdapter.add(item);
-                                }
-                                mAdapter.notifyDataSetChanged();
-                            }
-                        });
-                    } catch (final Exception e){
-                        createAndShowDialogFromTask(e, "Error");
-                    }
-                } else {
-                    // TODO
-                }
-
-                return null;
-            }
-        };
-
-        runAsyncTask(task);
+//        AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
+//            @Override
+//            protected Void doInBackground(Void... params) {
+//
+//                SharedPreferences settings = PreferenceManager
+//                        .getDefaultSharedPreferences(getContext());
+//                final String fromPhone = settings.getString("phone", "");
+//                if (fromPhone != null && !fromPhone.isEmpty()) {
+//                    try {
+//                        final List<GVQuestion> results = refreshItemsFromMobileServiceTable(fromPhone);
+//
+//                        mActivity.runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                mAdapter.clear();
+//
+//                                for (GVQuestion item : results) {
+//                                    mAdapter.add(item);
+//                                }
+//                                mAdapter.notifyDataSetChanged();
+//                            }
+//                        });
+//                    } catch (final Exception e){
+//                        createAndShowDialogFromTask(e, "Error");
+//                    }
+//                } else {
+//                    // TODO
+//                }
+//
+//                return null;
+//            }
+//        };
+//
+//        runAsyncTask(task);
     }
 
     /**
@@ -196,5 +230,75 @@ public class MyQuestions extends Fragment {
         builder.setMessage(message);
         builder.setTitle(title);
         builder.create().show();
+    }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class MyQuestionsTask extends AsyncTask<Void, Void, Boolean> {
+
+        MyQuestionsTask() {}
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+
+            SharedPreferences settings = PreferenceManager
+                    .getDefaultSharedPreferences(getContext());
+            final String fromPhone = settings.getString("phone", "");
+            if (fromPhone != null && !fromPhone.isEmpty()) {
+                try {
+                    final List<GVQuestion> results = refreshItemsFromMobileServiceTable(fromPhone);
+
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdapter.clear();
+
+                            for (GVQuestion item : results) {
+                                mAdapter.add(item);
+                            }
+                            mAdapter.notifyDataSetChanged();
+                        }
+                    });
+                } catch (final Exception e){
+                    createAndShowDialogFromTask(e, "Error");
+                    throw new Error(e);
+                }
+            } else {
+                // TODO
+            }
+
+            // TODO: register the new account here.
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            mAuthTask = null;
+            mFab.setVisibility(View.VISIBLE);
+            ActivityUtils.showProgress(false, mMyQuestionsFormView, mProgressView, getResources());
+            if (success) {
+//                getActivity().finish();
+            } else {
+//                mPasswordView.setError(getString(R.string.error_incorrect_password));
+//                mPasswordView.requestFocus();
+            }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mFab.setVisibility(View.GONE);
+            ActivityUtils.showProgress(true, mMyQuestionsFormView, mProgressView, getResources());
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask = null;
+            mFab.setVisibility(View.VISIBLE);
+            ActivityUtils.showProgress(false, mMyQuestionsFormView, mProgressView, getResources());
+        }
     }
 }

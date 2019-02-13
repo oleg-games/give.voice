@@ -2,14 +2,16 @@ package com.oleg.givevoice.myquestions;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -28,6 +30,7 @@ import com.oleg.givevoice.main.MainActivity;
 import com.oleg.givevoice.utils.ActivityUtils;
 import com.oleg.givevoice.utils.PhoneUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.concurrent.ExecutionException;
@@ -65,35 +68,76 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_new_question);
 
-        GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
-        MobileServiceClient mClient = servicemAdapter.getClient();
-        mQuestionTable = mClient.getTable(GVQuestion.class);
-        mAnswerTable = mClient.getTable(GVAnswer.class);
-        mActivity = this;
-
-        Button button = (Button) findViewById(R.id.add_button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(final View v) {
-                addQuestion();
-            }
-        });
-
-        Button selectImageButton = findViewById(R.id.select_image);
-        selectImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SelectImageFromGallery();
-            }
-        });
-
         this.imageView = findViewById(R.id.question_image_view);
+        EditText edit = findViewById(R.id.question_text);
         mAddQuestionFormView = findViewById(R.id.add_question_form);
         mProgressView = findViewById(R.id.add_progress);
+        Button button = findViewById(R.id.add_button);
+        Button selectImageButton = findViewById(R.id.select_image);
+
+        final GVQuestion itemQ = (GVQuestion) getIntent().getSerializableExtra(GVQuestion.class.getSimpleName());
+
+        System.out.println(itemQ);
+        if (itemQ == null) {
+            GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
+            MobileServiceClient mClient = servicemAdapter.getClient();
+            mQuestionTable = mClient.getTable(GVQuestion.class);
+            mAnswerTable = mClient.getTable(GVAnswer.class);
+            mActivity = this;
+
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(final View v) {
+                    addQuestion();
+                }
+            });
+
+            selectImageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    SelectImageFromGallery();
+                }
+            });
+        } else {
+            edit.setText(itemQ.getText());
+            edit.setEnabled(false);
+            edit.setFocusable(false);
+            button.setVisibility(View.GONE);
+            selectImageButton.setVisibility(View.GONE);
+
+            final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+            final Handler handler = new Handler();
+            Thread th = new Thread(new Runnable() {
+                public void run() {
+
+                    try {
+                        long imageLength = 0;
+                        ImageManager.GetImage(itemQ.getImage(), imageStream, imageLength);
+
+                        handler.post(new Runnable() {
+
+                            public void run() {
+                                byte[] buffer = imageStream.toByteArray();
+                                Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+                                imageView.setImageBitmap(bitmap);
+                            }
+                        });
+                    }
+                    catch(Exception ex) {
+                        final String exceptionMessage = ex.getMessage();
+//                    handler.post(new Runnable() {
+//                        public void run() {
+//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
+//                        }
+//                    });
+                    }
+                }});
+            th.start();
+        }
     }
 
     private void addQuestion() {
-        final EditText edit = (EditText) findViewById(R.id.question_text);
+        final EditText edit = findViewById(R.id.question_text);
 
         item.setText(edit.getText().toString());
         SharedPreferences settings = PreferenceManager
@@ -135,78 +179,6 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 //                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param exception
-     *            The exception to show in the dialog
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialogFromTask(final Exception exception, String title) {
-        mActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowDialog(exception, "Error");
-            }
-        });
-    }
-
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param exception
-     *            The exception to show in the dialog
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialog(Exception exception, String title) {
-        Throwable ex = exception;
-        if(exception.getCause() != null){
-            ex = exception.getCause();
-        }
-        createAndShowDialog(ex.getMessage(), title);
-    }
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param message
-     *            The dialog message
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialog(final String message, final String title) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        builder.setMessage(message);
-        builder.setTitle(title);
-        builder.create().show();
-    }
-
-    /**
-     * Add an item to the Mobile Service Table
-     *
-     * @param item
-     *            The item to Add
-     */
-    public GVQuestion addItemInTable(GVQuestion item) throws ExecutionException, InterruptedException {
-        GVQuestion entity = mQuestionTable.insert(item).get();
-        return entity;
-    }
-
-    /**
-     * Add an item to the Mobile Service Table
-     *
-     * @param item
-     *            The item to Add
-     */
-    public GVAnswer addItemInTableAnswer(GVAnswer item) throws ExecutionException, InterruptedException {
-        GVAnswer entity = mAnswerTable.insert(item).get();
-        return entity;
     }
 
     @Override

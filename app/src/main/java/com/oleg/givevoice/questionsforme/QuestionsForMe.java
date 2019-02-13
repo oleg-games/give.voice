@@ -62,12 +62,12 @@ public class QuestionsForMe extends Fragment {
         MobileServiceClient mClient = serviceAdapter.getClient();
         mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
 
-        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_answers_list);
         // создаем адаптер
         mAdapter = new QuestionsForMeAdapter(getView().getContext());
         refreshItemsFromTable();
 
         // устанавливаем для списка адаптер
+        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_answers_list);
         recyclerView.setAdapter(mAdapter);
 
         recyclerView.addOnItemTouchListener(

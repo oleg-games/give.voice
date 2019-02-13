@@ -61,10 +61,9 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView3"
+                android:id="@+id/version_text_view"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Version 1.0.2" />
+                android:layout_height="wrap_content" />
 
         </LinearLayout>
     </ScrollView>

@@ -1,12 +1,13 @@
 package com.oleg.givevoice.db.gvquestions;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Objects;
 
 /**
  * Represents an item in a ToDo list
  */
-public class GVQuestion {
+public class GVQuestion  implements Serializable {
 
     /**
      * Item text
