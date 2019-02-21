@@ -5,10 +5,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,25 +26,32 @@ import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.exceptions.GVException;
 import com.oleg.givevoice.main.MainActivity;
-import com.oleg.givevoice.utils.ActivityUtils;
+import com.oleg.givevoice.tasks.GVTask;
 import com.oleg.givevoice.utils.PhoneUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+
+import static com.oleg.givevoice.utils.ActivityUtils.createAndShowDialogOnUI;
 
 public class AddNewQuestionActivity extends AppCompatActivity {
 
-    private Uri imageUri;
     private static final int SELECT_IMAGE = 100;
-    private ImageView imageView;
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
+
+    private Uri imageUri;
+
+    private ImageView imageView;
     private Activity mActivity;
 
     private View mProgressView;
-    private View mAddQuestionFormView;
+    private View mQuestionFormView;
     /**
      * Mobile Service Table used to access data
      */
@@ -60,8 +67,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private AddQuestionTask mAuthTask = null;
-
+    private AddQuestionTask mTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +76,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 
         this.imageView = findViewById(R.id.question_image_view);
         EditText edit = findViewById(R.id.question_text);
-        mAddQuestionFormView = findViewById(R.id.add_question_form);
-        mProgressView = findViewById(R.id.add_progress);
+        mQuestionFormView = findViewById(R.id.question_form);
+        mProgressView = findViewById(R.id.progress_bar);
+
         Button button = findViewById(R.id.add_button);
         Button selectImageButton = findViewById(R.id.select_image);
 
@@ -79,8 +86,8 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 
         System.out.println(itemQ);
         if (itemQ == null) {
-            GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
-            MobileServiceClient mClient = servicemAdapter.getClient();
+            GVPrivateAzureServiceAdapter serviceAdapter = GVPrivateAzureServiceAdapter.getInstance();
+            MobileServiceClient mClient = serviceAdapter.getClient();
             mQuestionTable = mClient.getTable(GVQuestion.class);
             mAnswerTable = mClient.getTable(GVAnswer.class);
             mActivity = this;
@@ -124,12 +131,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                         });
                     }
                     catch(Exception ex) {
-                        final String exceptionMessage = ex.getMessage();
-//                    handler.post(new Runnable() {
-//                        public void run() {
-//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
+                        createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
                     }
                 }});
             th.start();
@@ -148,13 +150,13 @@ public class AddNewQuestionActivity extends AppCompatActivity {
             BigInteger fromPhoneInteger = new BigInteger(fromPhone);
             item.setUserId(fromPhoneInteger);
 
-            mAuthTask = new AddQuestionTask();
+            mTask = new AddQuestionTask(Arrays.asList(mQuestionFormView), Arrays.asList(mProgressView), getResources());
             // Check the SDK version and whether the permission is already granted or not.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
                 //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
             } else {
-                mAuthTask.execute((Void) null);
+                mTask.execute();
             }
         }
     }
@@ -173,10 +175,9 @@ public class AddNewQuestionActivity extends AppCompatActivity {
         if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission is granted
-                mAuthTask.execute((Void) null);
+                mTask.execute();
             } else {
-                System.out.println("test");
-//                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
+                createAndShowDialogOnUI(mActivity, new GVException("Until you grant the permission, we cannot display the names"));
             }
         }
     }
@@ -196,35 +197,31 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 
     private String uploadImage()
     {
-        String imageName = null;
         if (this.imageUri != null) {
             try {
-
                 final InputStream imageStream = getContentResolver().openInputStream(this.imageUri);
                 final int imageLength = imageStream.available();
-
-                imageName = ImageManager.UploadImage(imageStream, imageLength);
-//                Toast.makeText(this, "Text", Toast.LENGTH_SHORT).show();
+                return ImageManager.UploadImage(imageStream, imageLength);
             } catch (Exception ex) {
-
-//            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
+                createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
             }
         }
-        return imageName;
+
+        return null;
     }
 
     /**
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class AddQuestionTask extends AsyncTask<Void, Void, Boolean> {
+    public class AddQuestionTask extends GVTask {
 
-        AddQuestionTask() {}
+        AddQuestionTask(List<View> mainViews, List<View> progressViews, Resources resources) {
+            super(mActivity, mainViews, progressViews, resources);
+        }
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-
             try {
                 // Simulate network access.
                 String imageName = uploadImage();
@@ -233,39 +230,24 @@ public class AddNewQuestionActivity extends AppCompatActivity {
                 PhoneUtils.setPhoneContacts(qv.getId(), getContentResolver());
                 Intent intent = new Intent(mActivity, MainActivity.class);
                 startActivity(intent);
-            } catch (InterruptedException e) {
-                return false;
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+                return true;
+            } catch (InterruptedException | ExecutionException e) {
+                createAndShowDialog(e, "Error");
             }
 
-            // TODO: register the new account here.
-            return true;
+            return false;
         }
 
         @Override
         protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
-            ActivityUtils.showProgress(false, mAddQuestionFormView, mProgressView, getResources());
-
-            if (success) {
-                finish();
-            } else {
-//                mPasswordView.setError(getString(R.string.error_incorrect_password));
-//                mPasswordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            ActivityUtils.showProgress(true, mAddQuestionFormView, mProgressView, getResources());
+            super.onPostExecute(success);
+            mTask = null;
         }
 
         @Override
         protected void onCancelled() {
-            mAuthTask = null;
-            ActivityUtils.showProgress(false, mAddQuestionFormView, mProgressView, getResources());
+            super.onCancelled();
+            mTask = null;
         }
     }
 

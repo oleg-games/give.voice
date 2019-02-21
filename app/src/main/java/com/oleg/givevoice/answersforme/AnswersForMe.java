@@ -1,11 +1,9 @@
 package com.oleg.givevoice.answersforme;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
-import android.os.Build;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -20,10 +18,11 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
-import com.oleg.givevoice.questionsforme.GetQuestionsForMeActivity;
-import com.oleg.givevoice.questionsforme.QuestionsForMeAdapter;
+import com.oleg.givevoice.exceptions.GVException;
 import com.oleg.givevoice.questionsforme.RecyclerItemClickListener;
+import com.oleg.givevoice.tasks.GVTask;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -34,24 +33,31 @@ import java.util.concurrent.ExecutionException;
 
 public class AnswersForMe extends Fragment {
 
+
     private Activity mActivity;
 
     /**
      * Mobile Service Table used to access data
      */
-    private MobileServiceTable<GVQuestionAnswer> mQuestionAnswerTable;
-    private QuestionsForMeAdapter mAdapter;
+    private MobileServiceTable<GVQuestionAnswer> mQuestionTable;
+    private AnswersForMeAdapter mAdapter;
 
-    public AnswersForMe() {
-    }
+    private View mProgressView;
+    private View mQuestionsFormView;
+
+    /**
+     * Keep track of the login task to ensure we can cancel it if requested.
+     */
+    private MyQuestionsTask mTask;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        //returning our layout file
-        //change R.layout.yourlayoutfilename for each of your fragments
+        //returning our layouts file
+        //change R.layouts.yourlayoutfilename for each of your fragments
         return inflater.inflate(R.layout.fragment_answers_for_me_layout, container, false);
     }
+
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
@@ -60,16 +66,18 @@ public class AnswersForMe extends Fragment {
         //you can set the title for your toolbar here for different fragments different titles
         getActivity().setTitle(R.string.action_answers_for_me);
 
-        GVPrivateAzureServiceAdapter serviceAdapter = GVPrivateAzureServiceAdapter.getInstance();
-        MobileServiceClient mClient = serviceAdapter.getClient();
-        mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
+        GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
+        MobileServiceClient mClient = servicemAdapter.getClient();
+        mQuestionTable = mClient.getTable(GVQuestionAnswer.class);
 
-        RecyclerView recyclerView = (RecyclerView) getView().findViewById(R.id.questions_answers_list);
+        mQuestionsFormView = getView().findViewById(R.id.answers_for_me_form);
+        mProgressView = getView().findViewById(R.id.progress_bar);
+        // устанавливаем для списка адаптер
+        RecyclerView recyclerView = getView().findViewById(R.id.answers_for_me_list);
         // создаем адаптер
-        mAdapter = new QuestionsForMeAdapter(getView().getContext());
+        mAdapter = new AnswersForMeAdapter(getView().getContext());
         refreshItemsFromTable();
 
-        // устанавливаем для списка адаптер
         recyclerView.setAdapter(mAdapter);
 
         recyclerView.addOnItemTouchListener(
@@ -77,30 +85,47 @@ public class AnswersForMe extends Fragment {
                     @Override public void onItemClick(View view, int position) {
                         // do whatever
                         GVQuestionAnswer item = mAdapter.get(position);
-                        Intent intent = new Intent(mActivity, GetQuestionsForMeActivity.class);
+                        Intent intent = new Intent(mActivity, AnswerForMeActivity.class);
                         intent.putExtra(GVQuestionAnswer.class.getSimpleName(), item);
                         startActivity(intent);
                     }
 
                     @Override public void onLongItemClick(View view, int position) {
-                        // do whatever
-                        System.out.println("teat2");
+                        GVQuestionAnswer item = mAdapter.get(position);
+                        Intent intent = new Intent(mActivity, AnswerForMeActivity.class);
+                        intent.putExtra(GVQuestionAnswer.class.getSimpleName(), item);
+                        startActivity(intent);
                     }
                 })
         );
     }
 
+
     /**
      * Refresh the list with the items in the Table
      */
     private void refreshItemsFromTable() {
-
         // Get the items that weren't marked as completed and add them in the
         // mAdapter
+        mTask = new MyQuestionsTask(Arrays.asList(mQuestionsFormView), Arrays.asList(mProgressView), getResources());
+        // Check the SDK version and whether the permission is already granted or not.
+        mTask.execute();
+    }
 
-        AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-            @Override
-            protected Void doInBackground(Void... params) {
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class MyQuestionsTask extends GVTask {
+
+        MyQuestionsTask(List<View> mainViews, List<View> progressViews, Resources resources) {
+            super(mActivity, mainViews, progressViews, resources);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+            if (super.doInBackground(params)) {
                 SharedPreferences settings = PreferenceManager
                         .getDefaultSharedPreferences(getContext());
                 final String phoneNumber = settings.getString("phone", "");
@@ -119,18 +144,34 @@ public class AnswersForMe extends Fragment {
                                 mAdapter.notifyDataSetChanged();
                             }
                         });
+                        return true;
                     } catch (final Exception e){
-                        createAndShowDialogFromTask(e, "Error");
+                        createAndShowDialog(e, "Error");
                     }
                 } else {
-                    // TODO
+                    createAndShowDialog(new GVException("Empty phone number"), "GVError");
                 }
-
-                return null;
             }
-        };
 
-        runAsyncTask(task);
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            super.onPostExecute(success);
+            mTask = null;
+        }
+
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            mTask = null;
+        }
+    }
+
+
+    public AnswersForMe() {
     }
 
     /**
@@ -138,69 +179,6 @@ public class AnswersForMe extends Fragment {
      */
 
     private List<GVQuestionAnswer> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
-        return mQuestionAnswerTable.where().field("fromPhone").eq(phoneNumber).and().field("text").ne("").execute().get();
-    }
-
-    /**
-     * Run an ASync task on the corresponding executor
-     * @param task
-     * @return
-     */
-    private AsyncTask<Void, Void, Void> runAsyncTask(AsyncTask<Void, Void, Void> task) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            return task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        } else {
-            return task.execute();
-        }
-    }
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param exception
-     *            The exception to show in the dialog
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialogFromTask(final Exception exception, String title) {
-        mActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowDialog(exception, "Error");
-            }
-        });
-    }
-
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param exception
-     *            The exception to show in the dialog
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialog(Exception exception, String title) {
-        Throwable ex = exception;
-        if(exception.getCause() != null){
-            ex = exception.getCause();
-        }
-        createAndShowDialog(ex.getMessage(), title);
-    }
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param message
-     *            The dialog message
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialog(final String message, final String title) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-        builder.setMessage(message);
-        builder.setTitle(title);
-        builder.create().show();
+        return mQuestionTable.where().field("fromPhone").eq(phoneNumber).and().field("text").ne("").execute().get();
     }
 }

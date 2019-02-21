@@ -4,10 +4,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,23 +25,27 @@ import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
 import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
+import com.oleg.givevoice.exceptions.GVException;
 import com.oleg.givevoice.main.MainActivity;
-import com.oleg.givevoice.utils.ActivityUtils;
+import com.oleg.givevoice.tasks.GVTask;
 import com.oleg.givevoice.utils.PhoneUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+
+import static com.oleg.givevoice.utils.ActivityUtils.createAndShowDialogOnUI;
 
 public class GetQuestionsForMeActivity extends AppCompatActivity {
 
-    String questionId;
     private Uri imageUri;
     private static final int SELECT_IMAGE = 100;
-    private ImageView imageView;
+    private ImageView questionImageView;
     private ImageView forAnswerImageView;
     private View mProgressView;
-    private View mGetAnswerFormView;
+    private View mAnswerFormView;
     private Activity mActivity;
 
     /**
@@ -57,7 +61,7 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
-    private GetAnswerTask mAuthTask = null;
+    private GetAnswerTask mTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,31 +70,27 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
 
         final GVQuestionAnswer itemQA = (GVQuestionAnswer) getIntent().getSerializableExtra(GVQuestionAnswer.class.getSimpleName());
 
-        final TextView textView = (TextView) findViewById(R.id.question_text);
+        final TextView textView = findViewById(R.id.question_text);
         textView.setText(itemQA.getQuestion());
 
         GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
         mAnswerTable = mClient.getTable(GVAnswer.class);
-//        final Activity activity = this;
         mActivity = this;
-////        Button button = (Button) findViewById(R.id.button);
-
-        mGetAnswerFormView = findViewById(R.id.get_answer_form);
-        mProgressView = findViewById(R.id.add_progress);
+        mAnswerFormView = findViewById(R.id.answer_form);
+        mProgressView = findViewById(R.id.progress_bar);
 
         Button button = findViewById(R.id.get_answer_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
-//                qaId = itemQA.getQuestionId()
                 getAnswer(itemQA);
             }
         });
 
-        this.imageView = (ImageView)findViewById(R.id.question_for_me_image_view);
-        this.forAnswerImageView = (ImageView)findViewById(R.id.question_for_answer_image_view);
+        this.questionImageView = findViewById(R.id.question_image_view);
+        this.forAnswerImageView = findViewById(R.id.answer_image_view);
 
         Button selectImageButton = findViewById(R.id.select_image_for_answer);
         selectImageButton.setOnClickListener(new View.OnClickListener() {
@@ -118,17 +118,13 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
 
                             Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
 
-                            imageView.setImageBitmap(bitmap);
+                            questionImageView.setImageBitmap(bitmap);
                         }
                     });
                 }
                 catch(Exception ex) {
-                    final String exceptionMessage = ex.getMessage();
-//                    handler.post(new Runnable() {
-//                        public void run() {
-//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
+//                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! проверить
+                    createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
                 }
             }});
         th.start();
@@ -149,64 +145,37 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
     }
 
     private void getAnswer(GVQuestionAnswer itemQA) {
-        final EditText answerEdit = (EditText) findViewById(R.id.getAnswerEditText);
-        final GVAnswer answer = itemQA.getAnswer();
-        answer.setText(answerEdit.getText().toString());
-        String imageName = uploadImage();
-        answer.setImage(imageName);
+//        final EditText answerEdit = findViewById(R.id.getAnswerEditText);
+//        final GVAnswer answer = itemQA.getAnswer();
+//        answer.setText(answerEdit.getText().toString());
+//        String imageName = uploadImage();
+//        answer.setImage(imageName);
 
         // Insert the new item
 
-        mAuthTask = new GetAnswerTask(answer);
+        mTask = new GetAnswerTask(Arrays.asList(mAnswerFormView), Arrays.asList(mProgressView), getResources(), itemQA);
         // Check the SDK version and whether the permission is already granted or not.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
             //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
         } else {
-            mAuthTask.execute((Void) null);
+            mTask.execute((Void) null);
         }
     }
 
     private String uploadImage()
     {
-        String imageName = null;
         if (this.imageUri != null) {
             try {
-
                 final InputStream imageStream = getContentResolver().openInputStream(this.imageUri);
                 final int imageLength = imageStream.available();
-
-//            final Handler handler = new Handler();
-
-//            Thread th = new Thread(new Runnable() {
-//                public void run() {
-
-//                    try {
-
-                imageName = ImageManager.UploadImage(imageStream, imageLength);
-//                        handler.post(new Runnable() {
-//
-//                            public void run() {
-//                                Toast.makeText(AddNewQuestionActivity.this, "Image Uploaded Successfully. Name = " + imageName, Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
-//                    }
-//                    catch(Exception ex) {
-//                        final String exceptionMessage = ex.getMessage();
-//                        handler.post(new Runnable() {
-//                            public void run() {
-//                                Toast.makeText(AddNewQuestionActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
-//                    }
-//                }});
-//            th.start();
+                return ImageManager.UploadImage(imageStream, imageLength);
             } catch (Exception ex) {
-
-//            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
+                createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
             }
         }
-        return imageName;
+
+        return null;
     }
 
     private void SelectImageFromGallery()
@@ -217,20 +186,6 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
         startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_IMAGE);
     }
 
-//    public void setPhoneContactsIntoArrayList(){
-//
-//        Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);
-//        while (cursor.moveToNext()) {
-////            name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-//            String phonenumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-////            storeContacts.add(name + " "  + ":" + " " + phonenumber);
-//            System.out.println(phonenumber);
-//        }
-//
-//        cursor.close();
-//
-//    }
-
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
 
     @Override
@@ -239,10 +194,9 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
         if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission is granted
-                //                    setPhoneContacts();
-                mAuthTask.execute((Void) null);
+                mTask.execute();
             } else {
-//                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
+                createAndShowDialogOnUI(mActivity, new GVException("Until you grant the permission, we cannot display the names"));
             }
         }
     }
@@ -262,57 +216,47 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class GetAnswerTask extends AsyncTask<Void, Void, Boolean> {
+    public class GetAnswerTask extends GVTask {
+        private GVQuestionAnswer mItemQA;
 
-        private GVAnswer mAnswer;
-        GetAnswerTask(GVAnswer answer) {
-            mAnswer = answer;
+        GetAnswerTask(List<View> mainViews, List<View> progressViews, Resources resources, GVQuestionAnswer itemQA) {
+            super(mActivity, mainViews, progressViews, resources);
+            mItemQA = itemQA;
         }
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-
             try {
                 // Simulate network access.
-                GVAnswer anwerToChange = updateItemInTable(mAnswer);
-                PhoneUtils.setPhoneContacts(anwerToChange.getId(), getContentResolver());
+                final EditText answerEdit = findViewById(R.id.answer_edit_text);
+                final GVAnswer answer = mItemQA.getAnswer();
+                answer.setText(answerEdit.getText().toString());
+                String imageName = uploadImage();
+                answer.setImage(imageName);
+
+                GVAnswer anwerToChange = updateItemInTable(answer);
+                PhoneUtils.setPhoneContacts(anwerToChange.getQuestionId(), getContentResolver());
                 Intent intent = new Intent(mActivity, MainActivity.class);
                 intent.putExtra("fragment", R.id.questions_fo_me);
                 startActivity(intent);
-            } catch (InterruptedException e) {
-                return false;
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
 
-            // TODO: register the new account here.
-            return true;
+                return true;
+            } catch (InterruptedException | ExecutionException e) {
+                createAndShowDialog(e, "Error");
+            }
+            return false;
         }
 
         @Override
         protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
-            ActivityUtils.showProgress(false, mGetAnswerFormView, mProgressView, getResources());
-
-            if (success) {
-                finish();
-            } else {
-//                mPasswordView.setError(getString(R.string.error_incorrect_password));
-//                mPasswordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            ActivityUtils.showProgress(true, mGetAnswerFormView, mProgressView, getResources());
+            super.onPostExecute(success);
+            mTask = null;
         }
 
         @Override
         protected void onCancelled() {
-            mAuthTask = null;
-            ActivityUtils.showProgress(false, mGetAnswerFormView, mProgressView, getResources());
+            super.onCancelled();
+            mTask = null;
         }
     }
 }

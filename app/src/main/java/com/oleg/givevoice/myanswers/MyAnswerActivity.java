@@ -1,11 +1,9 @@
 package com.oleg.givevoice.myanswers;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -22,16 +20,8 @@ import java.io.ByteArrayOutputStream;
 
 public class MyAnswerActivity extends AppCompatActivity {
 
-    String questionId;
-    String fromPhone;
-    private Uri imageUri;
-    private static final int SELECT_IMAGE = 100;
     private ImageView imageView;
     private ImageView forAnswerImageView;
-
-    //    List<GVQuestion> questions = new ArrayList<>();
-
-    private Activity mActivity;
 
     /**
      * Mobile Service Table used to access data
@@ -50,99 +40,68 @@ public class MyAnswerActivity extends AppCompatActivity {
 
         final GVQuestionAnswer itemQA = (GVQuestionAnswer) getIntent().getSerializableExtra(GVQuestionAnswer.class.getSimpleName());
 
-        final TextView textView = (TextView) findViewById(R.id.question_text);
-        final TextView answerTextView = (TextView) findViewById(R.id.answer_text);
+        final TextView textView = findViewById(R.id.question_text);
+        final TextView answerTextView = findViewById(R.id.answer_text);
+        final TextView questionTextView = findViewById(R.id.question_from);
         textView.setText(itemQA.getQuestion());
         answerTextView.setText(itemQA.getText());
+        questionTextView.setText(itemQA.getFromPhone());
 
         GVPrivateAzureServiceAdapter servicemAdapter = GVPrivateAzureServiceAdapter.getInstance();
         MobileServiceClient mClient = servicemAdapter.getClient();
         mQuestionAnswerTable = mClient.getTable(GVQuestionAnswer.class);
         mAnswerTable = mClient.getTable(GVAnswer.class);
-//        final Activity activity = this;
-        mActivity = this;
 
-        this.imageView = (ImageView)findViewById(R.id.question_for_me_image_view);
-        this.forAnswerImageView = (ImageView)findViewById(R.id.question_for_answer_image_view);
-        this.imageView = (ImageView)findViewById(R.id.question_for_me_image_view);
-        this.forAnswerImageView = (ImageView)findViewById(R.id.question_for_answer_image_view);
+        this.imageView = findViewById(R.id.question_for_me_image_view);
+        this.forAnswerImageView = findViewById(R.id.question_for_answer_image_view);
 
+        UploadQuestionImageTask mTask = new UploadQuestionImageTask(itemQA.getQuestionImage(), imageView);
+        mTask.execute();
+        mTask = new UploadQuestionImageTask(itemQA.getImage(), forAnswerImageView);
+        mTask.execute();
+    }
+
+    private Bitmap uploadImage(String imgName) throws Exception {
         final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
-        final ByteArrayOutputStream imageStream2 = new ByteArrayOutputStream();
+        long imageLength = 0;
+        ImageManager.GetImage(imgName, imageStream, imageLength);
 
-        final Handler handler = new Handler();
+        byte[] buffer = imageStream.toByteArray();
 
-        Thread th = new Thread(new Runnable() {
-            public void run() {
+        return BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+    }
 
-                try {
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class UploadQuestionImageTask extends AsyncTask<Void, Void, Boolean> {
 
-                    long imageLength = 0;
-                    long imageLength2 = 0;
+        ImageView mImageView ;
+        String mImgName;
+        Bitmap mBitmap;
 
-                    ImageManager.GetImage(itemQA.getQuestionImage(), imageStream, imageLength);
-                    ImageManager.GetImage(itemQA.getImage(), imageStream2, imageLength2);
+        UploadQuestionImageTask(String imgName, ImageView imageView) {
+            this.mImageView = imageView;
+            this.mImgName = imgName;
+        }
 
-                    handler.post(new Runnable() {
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // Simulate network access.
+            try {
+                mBitmap = uploadImage(mImgName);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
 
-                        public void run() {
-                            byte[] buffer = imageStream.toByteArray();
-
-                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
-
-                            imageView.setImageBitmap(bitmap);
-                            byte[] buffer2 = imageStream2.toByteArray();
-
-                            Bitmap bitmap2 = BitmapFactory.decodeByteArray(buffer2, 0, buffer.length);
-
-                            forAnswerImageView.setImageBitmap(bitmap2);
-                        }
-                    });
-                }
-                catch(Exception ex) {
-                    final String exceptionMessage = ex.getMessage();
-//                    handler.post(new Runnable() {
-//                        public void run() {
-//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
-                }
-            }});
-        th.start();
-
-//        final ByteArrayOutputStream imageStreamAnswer = new ByteArrayOutputStream();
-//
-//        final Handler handlerAnswer = new Handler();
-//
-//        Thread thAnswer = new Thread(new Runnable() {
-//            public void run() {
-//
-//                try {
-//
-//                    long imageLength = 0;
-//
-//                    ImageManager.GetImage(itemQA.getImage(), imageStreamAnswer, imageLength);
-//
-//                    handlerAnswer.post(new Runnable() {
-//
-//                        public void run() {
-//                            byte[] buffer = imageStreamAnswer.toByteArray();
-//
-//                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
-//
-//                            forAnswerImageView.setImageBitmap(bitmap);
-//                        }
-//                    });
-//                }
-//                catch(Exception ex) {
-//                    final String exceptionMessage = ex.getMessage();
-////                    handler.post(new Runnable() {
-////                        public void run() {
-////                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-////                        }
-////                    });
-//                }
-//            }});
-//        thAnswer.start();
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            super.onPostExecute(success);
+            mImageView.setImageBitmap(mBitmap);
+        }
     }
 }

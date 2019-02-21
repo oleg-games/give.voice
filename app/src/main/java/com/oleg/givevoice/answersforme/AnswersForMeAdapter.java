@@ -3,7 +3,7 @@ package com.oleg.givevoice.answersforme;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Handler;
+import android.os.AsyncTask;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,19 +18,15 @@ import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class AnswersForMeAdapter extends RecyclerView.Adapter<AnswersForMeAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
     private List<GVQuestionAnswer> questionsForMe;
 
-    public AnswersForMeAdapter(Context context) {
+    public AnswersForMeAdapter (Context context) {
         this.questionsForMe = new ArrayList<>();
-        this.inflater = LayoutInflater.from(context);
-    }
-
-    public AnswersForMeAdapter(Context context, List<GVQuestionAnswer> questionsForMe) {
-        this.questionsForMe= questionsForMe;
         this.inflater = LayoutInflater.from(context);
     }
 
@@ -47,52 +43,26 @@ public class AnswersForMeAdapter extends RecyclerView.Adapter<AnswersForMeAdapte
     }
 
     @Override
-    public AnswersForMeAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
-        View view = inflater.inflate(R.layout.answers_for_me_item, parent, false);
-        return new AnswersForMeAdapter.ViewHolder(view);
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = inflater.inflate(R.layout.my_answers_item, parent, false);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(final AnswersForMeAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(final ViewHolder holder, int position) {
         final GVQuestionAnswer questionForMe = questionsForMe.get(position);
-        holder.questionTextView.setText(questionForMe .getQuestion());
-        holder.questionFromTextView.setText(questionForMe .getFromPhone());
+        holder.questionTextView.setText(questionForMe.getQuestion());
+        holder.questionFromTextView.setText(questionForMe.getToPhone());
+        holder.answerTextView.setText(questionForMe.getText());
 
-        final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
-
-        final Handler handler = new Handler();
-
-        Thread th = new Thread(new Runnable() {
-            public void run() {
-
-                try {
-
-                    long imageLength = 0;
-
-                    ImageManager.GetImage(questionForMe .getQuestionImage(), imageStream, imageLength);
-
-                    handler.post(new Runnable() {
-
-                        public void run() {
-                            byte[] buffer = imageStream.toByteArray();
-
-                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
-
-                            holder.questionImageView.setImageBitmap(bitmap);
-                        }
-                    });
-                }
-                catch(Exception ex) {
-                    final String exceptionMessage = ex.getMessage();
-//                    handler.post(new Runnable() {
-//                        public void run() {
-//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
-                }
-            }});
-        th.start();
+        if (questionForMe.getQuestionImage() != null) {
+            UploadQuestionImageTask mQTask = new UploadQuestionImageTask(holder, questionForMe.getQuestionImage());
+            mQTask.execute();
+        }
+        if (questionForMe.getImage() != null) {
+            UploadAnswerImageTask mATask = new UploadAnswerImageTask(holder, questionForMe.getImage());
+            mATask.execute();
+        }
     }
 
     @Override
@@ -104,13 +74,109 @@ public class AnswersForMeAdapter extends RecyclerView.Adapter<AnswersForMeAdapte
         final TextView questionTextView;
         final TextView questionFromTextView;
         final ImageView questionImageView;
+        final ImageView answerImageView;
+        final TextView answerTextView;
 
 
         ViewHolder(View view){
             super(view);
-            questionTextView = view.findViewById(R.id.question_for_me_text_view);
+            questionTextView = view.findViewById(R.id.question_text_view);
             questionFromTextView = view.findViewById(R.id.question_from_text_view);
             questionImageView = view.findViewById(R.id.question_image_view);
+            answerImageView = view.findViewById(R.id.answer_image_view);
+            answerTextView = view.findViewById(R.id.my_answer_text_view);
+        }
+    }
+
+    private Bitmap uploadImage(String imgName) throws Exception {
+        final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+        long imageLength = 0;
+        ImageManager.GetImage(imgName, imageStream, imageLength);
+
+        byte[] buffer = imageStream.toByteArray();
+
+        return BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+    }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class UploadQuestionImageTask extends AsyncTask<Void, Void, Boolean> {
+
+        ViewHolder mHolder;
+        String mImgName;
+        Bitmap bitmap;
+
+        UploadQuestionImageTask(final ViewHolder holder, String imgName) {
+            this.mHolder = holder;
+            this.mImgName = imgName;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                // Simulate network access.
+                bitmap = uploadImage(mImgName);
+                return true;
+            } catch (InterruptedException | ExecutionException e) {
+//                createAndShowDialog(e, "Error");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            super.onPostExecute(success);
+            mHolder.questionImageView.setImageBitmap(bitmap);
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+        }
+    }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class UploadAnswerImageTask extends AsyncTask<Void, Void, Boolean> {
+
+        ViewHolder mHolder;
+        String mImgName;
+        Bitmap bitmap;
+
+        UploadAnswerImageTask(final ViewHolder holder, String imgName) {
+            this.mHolder = holder;
+            this.mImgName = imgName;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                // Simulate network access.
+                bitmap = uploadImage(mImgName);
+                return true;
+            } catch (InterruptedException | ExecutionException e) {
+//                createAndShowDialog(e, "Error");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            super.onPostExecute(success);
+            mHolder.answerImageView.setImageBitmap(bitmap);
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
         }
     }
 }

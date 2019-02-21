@@ -6,8 +6,8 @@ android {
         applicationId "com.oleg.givevoice"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 8
-        versionName "1.0.3"
+        versionCode 10
+        versionName "1.0.5"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }

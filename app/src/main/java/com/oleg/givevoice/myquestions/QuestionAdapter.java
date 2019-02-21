@@ -14,35 +14,28 @@ import android.widget.TextView;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
+import com.oleg.givevoice.exceptions.GVException;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.oleg.givevoice.utils.ActivityUtils.createAndShowDialog;
+
 public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
     private List<GVQuestion> questions;
+    private Context mContext;
 
     public QuestionAdapter(Context context) {
         this.questions = new ArrayList<>();
         this.inflater = LayoutInflater.from(context);
-    }
-
-    public void add(GVQuestion question) {
-        questions.add(question);
-    }
-
-    public GVQuestion get(int position) {
-        return questions.get(position);
-    }
-
-    public void clear() {
-        questions.clear();
+        this.mContext = context;
     }
 
     @Override
-    public QuestionAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
         View view = inflater.inflate(R.layout.my_questions_item, parent, false);
         return new ViewHolder(view);
@@ -62,7 +55,6 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
                 public void run() {
 
                     try {
-
                         long imageLength = 0;
 
                         ImageManager.GetImage(question.getImage(), imageStream, imageLength);
@@ -80,12 +72,12 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
                     }
                     catch(Exception ex) {
                         final String exceptionMessage = ex.getMessage();
-//                    handler.post(new Runnable() {
-//                        public void run() {
-//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
-                        throw new Error(ex);
+
+                    handler.post(new Runnable() {
+                        public void run() {
+                            createAndShowDialog(mContext, new GVException(exceptionMessage), "");
+                        }
+                    });
                     }
                 }});
             th.start();
@@ -106,4 +98,19 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
             questionImageView = view.findViewById(R.id.question_image_view);
         }
     }
+
+
+    public void add(GVQuestion question) {
+        questions.add(question);
+    }
+
+    public GVQuestion get(int position) {
+        return questions.get(position);
+    }
+
+    public void clear() {
+        questions.clear();
+    }
+
+
 }

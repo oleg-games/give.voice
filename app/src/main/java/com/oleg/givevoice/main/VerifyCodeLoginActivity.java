@@ -1,11 +1,10 @@
 package com.oleg.givevoice.main;
 
-import android.app.AlertDialog;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
-import android.os.Build;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -18,7 +17,10 @@ import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPublicAzureServiceAdapter;
 import com.oleg.givevoice.db.gvverificationuser.GVVerificationUser;
+import com.oleg.givevoice.exceptions.GVException;
+import com.oleg.givevoice.tasks.GVTask;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -31,6 +33,15 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
 
     private GVVerificationUser currentUser;
 
+    /**
+     * Keep track of the login task to ensure we can cancel it if requested.
+     */
+    private VerifyTask mTask;
+    private Activity mActivity;
+
+    private View mProgressView;
+    private View mLoginFormView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +52,9 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
         MobileServiceClient mClient = servicemAdapter.getClient();
         mVerificationUserTable = mClient.getTable(GVVerificationUser.class);
 
+        mLoginFormView= findViewById(R.id.login_form);
+        mProgressView = findViewById(R.id.progress_bar);
+        mActivity = this;
         Button button = findViewById(R.id.verifyButton);
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -48,105 +62,12 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
             public void onClick(View v) {
                 final EditText edit = findViewById(R.id.editText);
                 final Context context = v.getContext();
-                AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
-                    @Override
-                    protected Void doInBackground(Void... params) {
-                        SharedPreferences settings = PreferenceManager
-                                .getDefaultSharedPreferences(context);
-                        final String phoneNumber = settings.getString("phone", "");
 
-                        if (phoneNumber != null && !phoneNumber.isEmpty()) {
-                            try {
-                                final List<GVVerificationUser> users = mVerificationUserTable.where().field("userPhone").eq(phoneNumber).execute().get();
-                                currentUser = users.get(0);
-                                if (currentUser != null) {
-                                    currentUser.setCode(edit.getText().toString());
-                                    try {
-                                        updateItemInTable(currentUser);
-                                        Intent intent = new Intent(context, MainActivity.class);
-                                        startActivity(intent);
-                                    } catch (final Exception e) {
-                                        createAndShowDialogFromTask(e, "Error");
-                                    }
-                                }
-                            } catch (final Exception e) {
-                                createAndShowDialogFromTask(e, "Error");
-                            }
-                        } else {
-                            // TODO
-                        }
-
-                        return null;
-                    }
-                };
-
-                runAsyncTask(task);
+                mTask = new VerifyTask(Arrays.asList(mLoginFormView), Arrays.asList(mProgressView), getResources(), context, edit.getText().toString());
+                // Check the SDK version and whether the permission is already granted or not.
+                mTask.execute();
             }
         });
-    }
-
-
-    /**
-     * Run an ASync task on the corresponding executor
-     * @param task
-     * @return
-     */
-    private AsyncTask<Void, Void, Void> runAsyncTask(AsyncTask<Void, Void, Void> task) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            return task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        } else {
-            return task.execute();
-        }
-    }
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param exception
-     *            The exception to show in the dialog
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialogFromTask(final Exception exception, String title) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowDialog(exception, "Error");
-            }
-        });
-    }
-
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param exception
-     *            The exception to show in the dialog
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialog(Exception exception, String title) {
-        Throwable ex = exception;
-        if(exception.getCause() != null){
-            ex = exception.getCause();
-        }
-        createAndShowDialog(ex.getMessage(), title);
-    }
-
-    /**
-     * Creates a dialog and shows it
-     *
-     * @param message
-     *            The dialog message
-     * @param title
-     *            The dialog title
-     */
-    private void createAndShowDialog(final String message, final String title) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        builder.setMessage(message);
-        builder.setTitle(title);
-        builder.create().show();
     }
 
     /**
@@ -158,5 +79,65 @@ public class VerifyCodeLoginActivity extends AppCompatActivity {
     public GVVerificationUser updateItemInTable(GVVerificationUser item) throws ExecutionException, InterruptedException {
         GVVerificationUser entity = mVerificationUserTable.update(item).get();
         return entity;
+    }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class VerifyTask extends GVTask {
+
+        Context mContext;
+        String mCode;
+
+        VerifyTask(List<View> mainViews, List<View> progressViews, Resources resources, Context context, String code) {
+            super(mActivity, mainViews, progressViews, resources);
+            this.mContext = context;
+            this.mCode = code;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            // TODO: attempt authentication against a network service.
+            if (super.doInBackground(params)) {
+                SharedPreferences settings = PreferenceManager
+                        .getDefaultSharedPreferences(mContext);
+                final String phoneNumber = settings.getString("phone", "");
+
+                if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                    try {
+                        final List<GVVerificationUser> users = mVerificationUserTable.where().field("userPhone").eq(phoneNumber).execute().get();
+                        currentUser = users.get(0);
+                        if (currentUser != null) {
+                            currentUser.setCode(mCode);
+                                updateItemInTable(currentUser);
+                                Intent intent = new Intent(mContext, MainActivity.class);
+                                startActivity(intent);
+                        }
+
+                        return true;
+                    } catch (final Exception e){
+                        createAndShowDialog(e, "Error");
+                    }
+                } else {
+                    createAndShowDialog(new GVException("Empty phone number"), "GVError");
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            super.onPostExecute(success);
+            mTask = null;
+        }
+
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            mTask = null;
+        }
     }
 }
