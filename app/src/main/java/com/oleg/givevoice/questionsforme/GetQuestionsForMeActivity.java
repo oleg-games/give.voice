@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -100,34 +101,36 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
             }
         });
 
-        final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
-        final Handler handler = new Handler();
-        Thread th = new Thread(new Runnable() {
-            public void run() {
+        if (itemQA.getQuestionImage() != null && !itemQA.getQuestionImage().isEmpty()) {
+            final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+            final Handler handler = new Handler();
+            Thread th = new Thread(new Runnable() {
+                public void run() {
 
-                try {
+                    try {
 
-                    long imageLength = 0;
+                        long imageLength = 0;
 
-                    ImageManager.GetImage(itemQA.getQuestionImage(), imageStream, imageLength);
+                        ImageManager.GetImage(itemQA.getQuestionImage(), imageStream, imageLength);
 
-                    handler.post(new Runnable() {
+                        handler.post(new Runnable() {
 
-                        public void run() {
-                            byte[] buffer = imageStream.toByteArray();
+                            public void run() {
+                                byte[] buffer = imageStream.toByteArray();
 
-                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+                                Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
 
-                            questionImageView.setImageBitmap(bitmap);
-                        }
-                    });
-                }
-                catch(Exception ex) {
+                                questionImageView.setImageBitmap(bitmap);
+                            }
+                        });
+                    }
+                    catch(Exception ex) {
 //                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! проверить
-                    createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
-                }
-            }});
-        th.start();
+                        createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
+                    }
+                }});
+            th.start();
+        }
     }
 
     @Override
@@ -155,7 +158,7 @@ public class GetQuestionsForMeActivity extends AppCompatActivity {
 
         mTask = new GetAnswerTask(Arrays.asList(mAnswerFormView), Arrays.asList(mProgressView), getResources(), itemQA);
         // Check the SDK version and whether the permission is already granted or not.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
             //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
         } else {

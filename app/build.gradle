@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.oleg.givevoice"
-        minSdkVersion 19
+        minSdkVersion 24
         targetSdkVersion 28
         versionCode 10
         versionName "1.0.5"

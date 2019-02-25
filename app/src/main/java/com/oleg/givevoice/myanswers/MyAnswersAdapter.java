@@ -55,10 +55,15 @@ public class MyAnswersAdapter extends RecyclerView.Adapter<MyAnswersAdapter.View
         holder.questionFromTextView.setText(questionForMe.getFromPhone());
         holder.answerTextView.setText(questionForMe.getText());
 
-        UploadQuestionImageTask mQTask = new UploadQuestionImageTask(holder, questionForMe.getQuestionImage());
-        mQTask.execute();
-        UploadAnswerImageTask mATask = new UploadAnswerImageTask(holder, questionForMe.getImage());
-        mATask.execute();
+        if (questionForMe.getQuestionImage() != null && !questionForMe.getQuestionImage().isEmpty()) {
+            UploadQuestionImageTask mQTask = new UploadQuestionImageTask(holder, questionForMe.getQuestionImage());
+            mQTask.execute();
+        }
+
+        if (questionForMe.getImage() != null && !questionForMe.getImage().isEmpty()) {
+            UploadAnswerImageTask mATask = new UploadAnswerImageTask(holder, questionForMe.getImage());
+            mATask.execute();
+        }
     }
 
     @Override

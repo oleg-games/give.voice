@@ -14,19 +14,24 @@ import android.widget.TextView;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestionsanswers.GVQuestionAnswer;
+import com.oleg.givevoice.exceptions.GVException;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.oleg.givevoice.utils.ActivityUtils.createAndShowDialog;
+
 public class QuestionsForMeAdapter extends RecyclerView.Adapter<QuestionsForMeAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
     private List<GVQuestionAnswer> questionsForMe;
+    private Context mContext;
 
     public QuestionsForMeAdapter(Context context) {
         this.questionsForMe = new ArrayList<>();
         this.inflater = LayoutInflater.from(context);
+        this.mContext = context;
     }
 
     public void add(GVQuestionAnswer qa) {
@@ -54,40 +59,32 @@ public class QuestionsForMeAdapter extends RecyclerView.Adapter<QuestionsForMeAd
         holder.questionTextView.setText(questionForMe.getQuestion());
         holder.questionFromTextView.setText(questionForMe.getFromPhone());
 
-        final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+        if (questionForMe.getQuestionImage() != null && !questionForMe.getQuestionImage().isEmpty()) {
+            final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
 
-        final Handler handler = new Handler();
+            final Handler handler = new Handler();
 
-        Thread th = new Thread(new Runnable() {
-            public void run() {
+            Thread th = new Thread(new Runnable() {
+                public void run() {
 
-                try {
+                    try {
+                        long imageLength = 0;
+                        ImageManager.GetImage(questionForMe.getQuestionImage(), imageStream, imageLength);
+                        handler.post(new Runnable() {
 
-                    long imageLength = 0;
-
-                    ImageManager.GetImage(questionForMe.getQuestionImage(), imageStream, imageLength);
-
-                    handler.post(new Runnable() {
-
-                        public void run() {
-                            byte[] buffer = imageStream.toByteArray();
-
-                            Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
-
-                            holder.questionImageView.setImageBitmap(bitmap);
-                        }
-                    });
-                }
-                catch(Exception ex) {
-                    final String exceptionMessage = ex.getMessage();
-//                    handler.post(new Runnable() {
-//                        public void run() {
-//                            Toast.makeText(ImageActivity.this, exceptionMessage, Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
-                }
-            }});
-        th.start();
+                            public void run() {
+                                byte[] buffer = imageStream.toByteArray();
+                                Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+                                holder.questionImageView.setImageBitmap(bitmap);
+                            }
+                        });
+                    }
+                    catch(Exception ex) {
+                        createAndShowDialog(mContext, new GVException(ex.getMessage()), "");
+                    }
+                }});
+            th.start();
+        }
     }
 
     @Override

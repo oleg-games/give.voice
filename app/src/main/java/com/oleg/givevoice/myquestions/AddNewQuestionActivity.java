@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -23,7 +24,6 @@ import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.oleg.givevoice.R;
 import com.oleg.givevoice.db.GVPrivateAzureServiceAdapter;
-import com.oleg.givevoice.db.gvanswers.GVAnswer;
 import com.oleg.givevoice.db.gvimage.ImageManager;
 import com.oleg.givevoice.db.gvquestions.GVQuestion;
 import com.oleg.givevoice.exceptions.GVException;
@@ -57,10 +57,6 @@ public class AddNewQuestionActivity extends AppCompatActivity {
      */
     private MobileServiceTable<GVQuestion> mQuestionTable;
 
-    /**
-     * Mobile Service Table used to access data
-     */
-    private MobileServiceTable<GVAnswer> mAnswerTable;
 
     final GVQuestion item = new GVQuestion();
 
@@ -84,12 +80,10 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 
         final GVQuestion itemQ = (GVQuestion) getIntent().getSerializableExtra(GVQuestion.class.getSimpleName());
 
-        System.out.println(itemQ);
         if (itemQ == null) {
             GVPrivateAzureServiceAdapter serviceAdapter = GVPrivateAzureServiceAdapter.getInstance();
             MobileServiceClient mClient = serviceAdapter.getClient();
             mQuestionTable = mClient.getTable(GVQuestion.class);
-            mAnswerTable = mClient.getTable(GVAnswer.class);
             mActivity = this;
 
             button.setOnClickListener(new View.OnClickListener() {
@@ -112,29 +106,31 @@ public class AddNewQuestionActivity extends AppCompatActivity {
             button.setVisibility(View.GONE);
             selectImageButton.setVisibility(View.GONE);
 
-            final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
-            final Handler handler = new Handler();
-            Thread th = new Thread(new Runnable() {
-                public void run() {
+            if (itemQ.getImage() != null && !itemQ.getImage().isEmpty()) {
+                final ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
+                final Handler handler = new Handler();
+                Thread th = new Thread(new Runnable() {
+                    public void run() {
 
-                    try {
-                        long imageLength = 0;
-                        ImageManager.GetImage(itemQ.getImage(), imageStream, imageLength);
+                        try {
+                            long imageLength = 0;
+                            ImageManager.GetImage(itemQ.getImage(), imageStream, imageLength);
 
-                        handler.post(new Runnable() {
+                            handler.post(new Runnable() {
 
-                            public void run() {
-                                byte[] buffer = imageStream.toByteArray();
-                                Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
-                                imageView.setImageBitmap(bitmap);
-                            }
-                        });
-                    }
-                    catch(Exception ex) {
-                        createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
-                    }
-                }});
-            th.start();
+                                public void run() {
+                                    byte[] buffer = imageStream.toByteArray();
+                                    Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+                                    imageView.setImageBitmap(bitmap);
+                                }
+                            });
+                        }
+                        catch(Exception ex) {
+                            createAndShowDialogOnUI(mActivity, ex, ex.getMessage());
+                        }
+                    }});
+                th.start();
+            }
         }
     }
 
@@ -152,7 +148,7 @@ public class AddNewQuestionActivity extends AppCompatActivity {
 
             mTask = new AddQuestionTask(Arrays.asList(mQuestionFormView), Arrays.asList(mProgressView), getResources());
             // Check the SDK version and whether the permission is already granted or not.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
                 //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
             } else {

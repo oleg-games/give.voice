@@ -71,13 +71,7 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHo
                         });
                     }
                     catch(Exception ex) {
-                        final String exceptionMessage = ex.getMessage();
-
-                    handler.post(new Runnable() {
-                        public void run() {
-                            createAndShowDialog(mContext, new GVException(exceptionMessage), "");
-                        }
-                    });
+                        createAndShowDialog(mContext, new GVException(ex.getMessage()), "");
                     }
                 }});
             th.start();

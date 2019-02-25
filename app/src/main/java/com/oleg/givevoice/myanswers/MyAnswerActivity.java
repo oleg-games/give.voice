@@ -55,10 +55,15 @@ public class MyAnswerActivity extends AppCompatActivity {
         this.imageView = findViewById(R.id.question_for_me_image_view);
         this.forAnswerImageView = findViewById(R.id.question_for_answer_image_view);
 
-        UploadQuestionImageTask mTask = new UploadQuestionImageTask(itemQA.getQuestionImage(), imageView);
-        mTask.execute();
-        mTask = new UploadQuestionImageTask(itemQA.getImage(), forAnswerImageView);
-        mTask.execute();
+        UploadQuestionImageTask mTask;
+        if (itemQA.getQuestionImage() != null && !itemQA.getQuestionImage().isEmpty()) {
+            mTask = new UploadQuestionImageTask(itemQA.getQuestionImage(), imageView);
+            mTask.execute();
+        }
+        if (itemQA.getImage() != null && !itemQA.getImage().isEmpty()) {
+            mTask = new UploadQuestionImageTask(itemQA.getImage(), forAnswerImageView);
+            mTask.execute();
+        }
     }
 
     private Bitmap uploadImage(String imgName) throws Exception {

@@ -119,8 +119,7 @@ public class QuestionsForMe extends Fragment {
      */
 
     private List<GVQuestionAnswer> refreshItemsFromMobileServiceTable(String phoneNumber) throws ExecutionException, InterruptedException {
-        return mQuestionAnswerTable.where().field("toPhone").eq(phoneNumber).execute().get();
-//        return mQuestionAnswerTable.where().field("toPhone").eq(phoneNumber).and().field("text").eq("").execute().get();
+        return mQuestionAnswerTable.where().field("toPhone").eq(phoneNumber).and().field("text").ne("").execute().get();
     }
 
     /**

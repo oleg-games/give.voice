@@ -55,11 +55,11 @@ public class AnswersForMeAdapter extends RecyclerView.Adapter<AnswersForMeAdapte
         holder.questionFromTextView.setText(questionForMe.getToPhone());
         holder.answerTextView.setText(questionForMe.getText());
 
-        if (questionForMe.getQuestionImage() != null) {
+        if (questionForMe.getQuestionImage() != null && !questionForMe.getQuestionImage().isEmpty()) {
             UploadQuestionImageTask mQTask = new UploadQuestionImageTask(holder, questionForMe.getQuestionImage());
             mQTask.execute();
         }
-        if (questionForMe.getImage() != null) {
+        if (questionForMe.getImage() != null && !questionForMe.getImage().isEmpty()) {
             UploadAnswerImageTask mATask = new UploadAnswerImageTask(holder, questionForMe.getImage());
             mATask.execute();
         }
